@@ -181,6 +181,8 @@ body.calm .wag,body.calm .zzz,body.calm .eyes,body.calm .m-body{animation:none!i
 .mic svg{width:40px;height:40px}
 .mic.listening{background:#E53935;box-shadow:0 6px 0 #B71C1C;animation:micpulse 1s ease-in-out infinite}
 @keyframes micpulse{50%{transform:scale(1.08)}}
+.model mark{background:#FFD54F;color:inherit;border-radius:6px;padding:0 3px}
+.model .said{display:block;font-size:17px;font-family:inherit;font-weight:600;color:var(--muted);margin-top:4px}
 .heard{font-size:17px;font-weight:700;color:var(--muted);max-width:32ch;text-align:left}
 .jbtn{border-radius:16px;padding:14px 8px;font-weight:800;font-size:18px;border:3px solid var(--line);background:var(--card)}
 .jbtn.self{border-color:var(--ok);background:var(--ok-soft)}
@@ -659,7 +661,7 @@ const TRACKS = {
 };
 const TRACK_KEYS = Object.keys(TRACKS);
 const mainType = (tr, L) => tr==="q" ? TRACKS.q.levels[L-1].main : tr;
-const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", form:"Формы слов", say:"Скажи сам", day:"Мой день", read:"Читаем"};
+const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", day:"Мой день", read:"Читаем"};
 const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
 
 /* ================= state ================= */
@@ -1118,11 +1120,34 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const normW = t => t.toLowerCase().replace(/ё/g,"е").replace(/[^a-zа-я0-9 ]/g," ").split(/\s+/).filter(Boolean);
 function lev(a,b){ const m=a.length,n=b.length; if(!m) return n; if(!n) return m; let p=Array.from({length:n+1},(_,j)=>j);
   for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; } return p[n]; }
-function wordHit(w, heard){ const tol = w.length<=2 ? 0 : (w.length<=4 ? 1 : 2); return heard.some(h=>h===w || (w.length>2 && lev(h,w)<=tol) || (w.length>=3 && h.startsWith(w)) || (w.length>4 && h.startsWith(w.slice(0,w.length-2)))); }
-function voiceMatch(answer, transcripts){
-  const need=normW(answer);
-  return transcripts.some(t=>{ const heard=normW(t); if(heard.join("").includes(need.join(""))) return true; const hits=need.filter(w=>wordHit(w,heard)).length; return need.length<=2 ? hits===need.length : hits>=need.length-1; });
+const PREP_W=["на","под","в","во","за","у","с","со","к","из","от","над","перед","по","до","около","рядом","возле"];
+function pre(a,b){ let p=0; while(p<a.length&&p<b.length&&a[p]===b[p]) p++; return p; }
+function stemLike(a,b){ return a.length>=3 && b.length>=3 && pre(a,b)>=Math.max(3, Math.min(a.length,b.length)-2); }
+/* Strict grammar check: words must match exactly (with endings and prepositions).
+   Returns per-word result: ok | ending (right word, wrong form) | prep (other preposition) | miss */
+function analyzeSpeech(answer, t, loose){
+  const need=normW(answer), heard=normW(t), used=new Set();
+  if(heard.join("").includes(need.join(""))) return {perfect:true, t, res:need.map(w=>({w,k:"ok"})), score:99};
+  const res=need.map(w=>{
+    let j=heard.findIndex((h,i)=>!used.has(i) && (h===w || (loose && w.length>=3 && h.startsWith(w))));
+    if(j>=0){ used.add(j); return {w,k:"ok"}; }
+    if(PREP_W.includes(w)){ j=heard.findIndex((h,i)=>!used.has(i) && PREP_W.includes(h) && !need.includes(h)); if(j>=0){ used.add(j); return {w,k:"prep",got:heard[j]}; } return {w,k:"miss"}; }
+    j=heard.findIndex((h,i)=>!used.has(i) && stemLike(h,w)); if(j>=0){ used.add(j); return {w,k:"ending",got:heard[j]}; }
+    return {w,k:"miss"};
+  });
+  const ok=res.filter(r=>r.k==="ok").length, near=res.filter(r=>r.k!=="miss").length;
+  return {perfect: ok===need.length, t, res, score: ok*2+near, near: near>=Math.ceil(need.length/2) && near>0};
 }
+function bestSpeech(answer, alts, loose){ return alts.map(t=>analyzeSpeech(answer,t,loose)).sort((a,b)=>b.score-a.score)[0]; }
+function voiceMatch(answer, alts){ return bestSpeech(answer, alts).perfect; }
+const ERR_NAME={ending:"окончание", prep:"предлог", miss:"пропущено слово"};
+function markAnswer(answer, res){
+  const words=answer.split(" ");
+  return words.map((w,i)=>{ const r=res[i]; if(!r||r.k==="ok") return esc(w);
+    if(r.k==="ending"){ const p=Math.min(pre(w.toLowerCase().replace(/ё/g,"е"), r.got), w.length-1); return esc(w.slice(0,p))+"<mark>"+esc(w.slice(p))+"</mark>"; }
+    return "<mark>"+esc(w)+"</mark>"; }).join(" ");
+}
+
 let recog=null;
 function listen(onText, onFail){
   if(!SR){ onFail("nosr"); return; }
@@ -1160,9 +1185,16 @@ function sayTask(){
     if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
     mic.classList.add("listening"); heard.textContent="Слушаю…"; sfx("tap");
     listen(alts=>{ mic.classList.remove("listening"); if(busy) return;
-      heard.textContent=`Услышал: «${alts[0]}»`;
-      if(voiceMatch(answer, alts)){ cur.voice=alts[0]; done("self"); }
-      else { heard.textContent=`Услышал: «${alts[0]}». Скажи еще раз.`; mascot("oops","Еще раз!"); }
+      const b=bestSpeech(answer, alts, L.kind==="name");
+      heard.textContent=`Услышал: «${b.t}»`;
+      if(b.perfect){ cur.voice=b.t; done("self"); return; }
+      if(b.near){
+        const errs=b.res.filter(r=>r.k!=="ok");
+        $("model").innerHTML=markAnswer(answer, b.res)+`<span class="said">Ты сказал: «${esc(b.t)}»</span>`; $("model").classList.remove("empty");
+        heard.textContent="Скажи еще раз."; sfx("tap"); say(answer); mascot("oops","Еще раз!");
+        logIt("say","sayTry",`${q} → ${answer}`, `голосом: «${b.t}» — `+errs.map(r=>ERR_NAME[r.k]+(r.got?` («${r.got}» вместо «${r.w}»)`:` («${r.w}»)`)).join(", "), false);
+        S.log[S.log.length-1].err=errs.map(r=>r.k); save();
+      } else { heard.textContent=`Услышал: «${b.t}». Скажи еще раз.`; mascot("oops","Еще раз!"); }
     }, err=>{ mic.classList.remove("listening"); if(busy) return;
       heard.textContent = err==="not-allowed"||err==="service-not-allowed" ? "Нет доступа к микрофону. Разрешите его в Safari и откройте приложение по ссылке GitHub."
         : err==="nosr" ? "Голосовой ответ работает в Safari, в версии приложения с GitHub."
@@ -1428,10 +1460,12 @@ function renderParent(){ renderResetRow();
   const last=a=>a.slice(-20), rows=[];
   ["na","v","pod","ryadom","iz"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty==="pred" && (" "+l.task+" ").includes(" "+PREPS[k].w+" "))); if(a.length) rows.push({n:`Предлог ${PREPS[k].w}`, a}); });
   ["chto","gde","kto","delaet","sent","kakoy","form","say","day","read"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty===k)); if(a.length) rows.push({n:TYPE_NAMES[k], a}); });
-  $("stats").innerHTML = rows.length ? rows.map(r=>`<div class="stat"><b>${r.a.filter(x=>x.ok).length} из ${r.a.length}</b><div>${r.n}</div></div>`).join("") : `<p class="hint-txt">Здесь появятся результаты по каждому типу заданий.</p>`;
+  const tries=S.log.filter(l=>l.ty==="sayTry").slice(-50), ec=k=>tries.filter(l=>(l.err||[]).includes(k)).length;
+  const errTiles = tries.length ? ["ending","prep","miss"].map(k=>`<div class="stat"><b>${ec(k)}</b><div>Голосом: ${({ending:"ошибки в окончаниях",prep:"не тот предлог",miss:"пропущенные слова"})[k]}</div></div>`).join("") : "";
+  $("stats").innerHTML = rows.length||tries.length ? rows.map(r=>`<div class="stat"><b>${r.a.filter(x=>x.ok).length} из ${r.a.length}</b><div>${r.n}</div></div>`).join("")+errTiles : `<p class="hint-txt">Здесь появятся результаты по каждому типу заданий.</p>`;
   const fmt=t=>{ const d=new Date(t); return d.toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}); };
   const log=S.log.slice(-80).reverse();
-  $("logBody").innerHTML = log.length ? log.map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc((TRACKS[l.tr]||{}).title||"")}</td><td>${esc(l.task)}</td><td>${esc(l.ans)}</td><td class="${l.ok?"y":"n"}">${l.ok?"верно":"ошибка"}</td><td>${l.lvl}</td><td>${l.st}</td></tr>`).join("") : `<tr><td colspan="7">Пока пусто. Здесь появятся задания, как только Алан начнет заниматься.</td></tr>`;
+  $("logBody").innerHTML = log.length ? log.map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc((TRACKS[l.tr]||{}).title||"")}</td><td>${esc(l.task)}</td><td>${esc(l.ans)}</td><td class="${l.ok?"y":"n"}">${l.ok?"верно":(l.ty==="sayTry"?"попытка":"ошибка")}</td><td>${l.lvl}</td><td>${l.st}</td></tr>`).join("") : `<tr><td colspan="7">Пока пусто. Здесь появятся задания, как только Алан начнет заниматься.</td></tr>`;
   const cr=$("clearRow"); cr.innerHTML=`<button class="ghost danger" id="clearBtn">Очистить журнал</button>`;
   $("clearBtn").onclick=()=>{ cr.innerHTML=`<span>Удалить все записи журнала?</span><button class="ghost danger" id="clrYes">Да, удалить</button><button class="ghost" id="clrNo">Нет</button>`;
     $("clrYes").onclick=()=>{ S.log=[]; save(); renderParent(); }; $("clrNo").onclick=renderParent; };
