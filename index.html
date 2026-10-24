@@ -176,6 +176,12 @@ body.calm .wag,body.calm .zzz,body.calm .eyes,body.calm .m-body{animation:none!i
 .model{text-align:center;font-family:var(--display);font-weight:700;font-size:clamp(24px,4vw,38px);padding:8px;border-radius:14px;background:var(--ok-soft);min-height:1.4em}
 .model.empty{background:transparent;color:var(--muted);font-size:18px}
 .jrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.microw{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.mic{width:84px;height:84px;border-radius:50%;background:#7E57C2;display:grid;place-items:center;box-shadow:0 6px 0 #5E35B1;flex:none}
+.mic svg{width:40px;height:40px}
+.mic.listening{background:#E53935;box-shadow:0 6px 0 #B71C1C;animation:micpulse 1s ease-in-out infinite}
+@keyframes micpulse{50%{transform:scale(1.08)}}
+.heard{font-size:17px;font-weight:700;color:var(--muted);max-width:32ch;text-align:left}
 .jbtn{border-radius:16px;padding:14px 8px;font-weight:800;font-size:18px;border:3px solid var(--line);background:var(--card)}
 .jbtn.self{border-color:var(--ok);background:var(--ok-soft)}
 .jbtn.help{border-color:var(--does);background:var(--does-soft)}
@@ -821,7 +827,7 @@ function showReady(k){
   $("rNo").onclick=goHome;
   say("Готов?");
 }
-function goHome(){ $("readyScr").hidden=true; $("prog").hidden=true; clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
+function goHome(){ try{ recog&&recog.abort(); }catch(e){} $("readyScr").hidden=true; $("prog").hidden=true; clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
 function start(m){ mode=m; cur=null; $("home").hidden=true; $("play").hidden=false; $("backBtn").hidden=false; $("hdrTitle").textContent=TRACKS[m].title; renderStars(); nextTask(); }
 $("backBtn").onclick=goHome;
 $("speakBtn").onclick=()=>{ if(cur&&cur.speech) say(cur.speech); };
@@ -1107,6 +1113,28 @@ function formTask(repeat){
 }
 
 /* ================= 5. say it yourself ================= */
+/* ---- voice answers (Safari speech recognition) ---- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const normW = t => t.toLowerCase().replace(/ё/g,"е").replace(/[^a-zа-я0-9 ]/g," ").split(/\s+/).filter(Boolean);
+function lev(a,b){ const m=a.length,n=b.length; if(!m) return n; if(!n) return m; let p=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; } return p[n]; }
+function wordHit(w, heard){ const tol = w.length<=2 ? 0 : (w.length<=4 ? 1 : 2); return heard.some(h=>h===w || (w.length>2 && lev(h,w)<=tol) || (w.length>=3 && h.startsWith(w)) || (w.length>4 && h.startsWith(w.slice(0,w.length-2)))); }
+function voiceMatch(answer, transcripts){
+  const need=normW(answer);
+  return transcripts.some(t=>{ const heard=normW(t); if(heard.join("").includes(need.join(""))) return true; const hits=need.filter(w=>wordHit(w,heard)).length; return need.length<=2 ? hits===need.length : hits>=need.length-1; });
+}
+let recog=null;
+function listen(onText, onFail){
+  if(!SR){ onFail("nosr"); return; }
+  try{ if(recog) recog.abort(); }catch(e){}
+  try{ speechSynthesis.cancel(); }catch(e){}
+  const r=new SR(); recog=r; r.lang="ru-RU"; r.interimResults=false; r.maxAlternatives=5; r.continuous=false;
+  let got=false;
+  r.onresult=e=>{ got=true; const alts=[]; const res=e.results[0]; for(let i=0;i<res.length;i++) alts.push(res[i].transcript); onText(alts); };
+  r.onerror=e=>{ got=true; onFail(e.error||"error"); };
+  r.onend=()=>{ if(!got) onFail("no-speech"); };
+  try{ r.start(); }catch(e){ onFail("start"); }
+}
 function sayTask(){
   const L=TRACKS.say.levels[S.lvl.say-1], st=S.st.say; let answer, q;
   cur={kind:"say", ty:"say"};
@@ -1119,13 +1147,27 @@ function sayTask(){
   cur.render(); showArea("judge");
   const shown = st===1 ? answer : (st===2 ? answer.split(" ")[0]+" …" : "");
   $("judge").innerHTML=`<div class="model ${shown?"":"empty"}" id="model">${shown?esc(shown):"Ответ скрыт. Нажмите «Подсказка», если нужно."}</div>
+    <div class="microw"><button class="mic" id="jMic" aria-label="Ответить голосом"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button><span class="heard" id="jHeard">${SR?"Нажми на микрофон и скажи ответ.":"Голосовой ответ работает в Safari, в версии приложения с GitHub."}</span></div>
     <div class="jrow"><button class="jbtn hintb" id="jHint">Подсказка</button><button class="jbtn self" id="jSelf">Сказал сам</button><button class="jbtn help" id="jHelp">С подсказкой</button><button class="jbtn" id="jNo">Не сказал</button></div>`;
   $("jHint").onclick=()=>{ $("model").textContent=answer; $("model").classList.remove("empty"); say(answer); };
   const done=(kind)=>{ if(busy) return; busy=true; $("model").textContent=answer; $("model").classList.remove("empty");
     const ok=kind==="self"; cur.render(ok?"ok":(kind==="no"?"err":null)); say(answer); if(ok) onRightFx($("jSelf")); else sfx("tap");
-    logIt("say","say",`${q} → ${answer}`, ({self:"сам",help:"с подсказкой",no:"не сказал"})[kind], ok);
+    logIt("say","say",`${q} → ${answer}`, cur.voice ? `голосом: «${cur.voice}»` : ({self:"сам",help:"с подсказкой",no:"не сказал"})[kind], ok);
     if(ok){ win("say"); later(afterWin,2000); } else { if(kind==="no") lose("say"); else neutral("say"); later(()=>nextTask(),2200); } };
   $("jSelf").onclick=()=>done("self"); $("jHelp").onclick=()=>done("help"); $("jNo").onclick=()=>done("no");
+  const mic=$("jMic"), heard=$("jHeard");
+  mic.onclick=()=>{ if(busy) return;
+    if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
+    mic.classList.add("listening"); heard.textContent="Слушаю…"; sfx("tap");
+    listen(alts=>{ mic.classList.remove("listening"); if(busy) return;
+      heard.textContent=`Услышал: «${alts[0]}»`;
+      if(voiceMatch(answer, alts)){ cur.voice=alts[0]; done("self"); }
+      else { heard.textContent=`Услышал: «${alts[0]}». Скажи еще раз.`; mascot("oops","Еще раз!"); }
+    }, err=>{ mic.classList.remove("listening"); if(busy) return;
+      heard.textContent = err==="not-allowed"||err==="service-not-allowed" ? "Нет доступа к микрофону. Разрешите его в Safari и откройте приложение по ссылке GitHub."
+        : err==="nosr" ? "Голосовой ответ работает в Safari, в версии приложения с GitHub."
+        : "Не расслышал. Нажми и скажи еще раз."; });
+  };
   say(q);
 }
 
