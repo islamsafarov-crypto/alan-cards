@@ -268,6 +268,7 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
         <button class="primary" id="phAdd">Добавить фото</button>
       </div>
       <span class="msg" id="phMsg"></span>
+      <div class="row"><label class="ghost" style="cursor:pointer">Загрузить набор фото (файл .json)<input type="file" id="phPack" accept="application/json,.json" hidden></label><span class="hint-txt" id="packMsg"></span></div>
     </details>
     <div class="pbox">
       <h3>Голос</h3>
@@ -946,6 +947,19 @@ $("phAdd").onclick=()=>{
     $("phFile").value=""; $("phName").value=""; $("phAct").value=""; renderPhotos(); };
   img.onerror=()=>{ URL.revokeObjectURL(url); $("phMsg").textContent="Не получилось открыть этот файл. Попробуйте другое фото."; };
   img.src=url;
+};
+$("phPack").onchange=()=>{
+  const f=$("phPack").files[0]; const m=$("packMsg"); m.textContent=""; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ let data; try{ data=JSON.parse(rd.result); }catch(e){ m.textContent="Это не файл набора фото."; return; }
+    const list=(data&&Array.isArray(data.photos))?data.photos.filter(p=>p&&typeof p.img==="string"&&p.img.startsWith("data:image/")&&p.name):[];
+    if(!list.length){ m.textContent="В файле нет фото."; return; }
+    const backup=PHOTOS.slice();
+    list.forEach(p=>{ const nm=String(p.name).trim(); const i=PHOTOS.findIndex(x=>x.name.trim().toLowerCase()===nm.toLowerCase() && !(x.act||"").trim() && !(p.act||"").trim());
+      const rec={name:nm, act:String(p.act||"").trim(), img:p.img}; if(i>=0) PHOTOS[i]=rec; else PHOTOS.push(rec); });
+    if(!savePhotos()){ PHOTOS=backup; savePhotos(); m.textContent="Не хватает места на устройстве."; return; }
+    m.textContent=`Загружено фото: ${list.length}.`; $("phPack").value=""; renderPhotos(); };
+  rd.readAsText(f);
 };
 function renderParent(){
   const tb=$("tracksBox"); tb.innerHTML=""; TRACK_KEYS.forEach(k=>renderTrack(k, tb));
