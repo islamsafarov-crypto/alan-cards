@@ -29,6 +29,7 @@
   --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:light;
 }
+[hidden]{display:none!important}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);margin:0;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none}
@@ -46,42 +47,68 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .hold-ring rect{fill:none;stroke:var(--where);stroke-width:4;stroke-dasharray:220;stroke-dashoffset:220}
 .holding .hold-ring rect{transition:stroke-dashoffset 1.2s linear;stroke-dashoffset:0}
 
-.home{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-content:center}
-.tile{border:3px solid var(--line);border-radius:24px;padding:24px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;min-height:220px}
-#goPred{border-color:var(--where);background:#EEF4FF}
-#goQ{border-color:var(--what);background:#EAFBF0}
-.tile .tile-art{width:100%;height:110px}
-.tile h2{font-family:var(--display);font-size:30px;margin:0;text-wrap:balance}
-.tile p{margin:0;color:var(--muted);font-size:16px}
-.lvl-pill{font-weight:800;font-size:14px;padding:5px 12px;border-radius:999px;background:var(--card);border:2px solid currentColor}
-#goPred .lvl-pill{color:var(--where)} #goQ .lvl-pill{color:var(--what)}
-.home-note{grid-column:1/-1;text-align:center;color:var(--muted);font-size:14px}
+.home{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;align-content:start;padding-bottom:8px}
+.tile{border:3px solid var(--tc,var(--line));background:var(--tb,var(--card));border-radius:22px;padding:18px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left}
+.tile .tile-art{width:100%;height:64px}
+.tile h2{font-family:var(--display);font-size:24px;margin:0;text-wrap:balance}
+.tile p{margin:0;color:var(--muted);font-size:15px}
+.lvl-pill{font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px;background:var(--card);border:2px solid var(--tc);color:var(--tc)}
+.home-note{grid-column:1/-1;text-align:center;color:var(--muted);font-size:14px;margin:4px 0 0}
 
 .play{flex:1;display:flex;flex-direction:column;gap:12px;min-height:0}
-.task{background:var(--card);border:3px solid var(--line);border-radius:22px;padding:14px 16px;display:flex;align-items:center;gap:14px;transition:border-color .2s,background .2s}
+.task{background:var(--card);border:3px solid var(--line);border-radius:22px;padding:12px 16px;display:flex;align-items:center;gap:14px;transition:border-color .2s,background .2s}
 .task.ok{border-color:var(--ok);background:var(--ok-soft)}
 .task.err{border-color:var(--err);background:var(--err-soft)}
-.task-text{flex:1;min-width:0;font-family:var(--display);font-weight:600;font-size:clamp(26px,4.6vw,44px);line-height:1.25;display:flex;flex-wrap:wrap;align-items:center;gap:.25em .4em}
+.task-text{flex:1;min-width:0;font-family:var(--display);font-weight:600;font-size:clamp(24px,4.2vw,42px);line-height:1.25;display:flex;flex-wrap:wrap;align-items:center;gap:.25em .4em}
 .chip{display:inline-block;padding:.05em .45em;border-radius:.35em;color:#fff;font-weight:700;letter-spacing:.02em}
 .chip.where{background:var(--where)} .chip.what{background:var(--what)} .chip.who{background:var(--who)} .chip.does{background:var(--does);color:#2A2000}
+.chip.small{font-size:.55em}
+.blank{display:inline-block;min-width:3.2em;border-bottom:4px dashed var(--muted);text-align:center;color:var(--ok)}
 .task-text .muted{color:var(--muted)}
-.speak{width:64px;height:64px;border-radius:50%;background:var(--where-soft);display:grid;place-items:center;flex:none}
+.speak{width:62px;height:62px;border-radius:50%;background:var(--where-soft);display:grid;place-items:center;flex:none}
 .speak svg{width:32px;height:32px}
 .reveal{font-family:var(--body);font-size:16px;font-weight:800;color:var(--where);padding:10px 14px;border-radius:12px;background:var(--where-soft)}
 .scene-wrap{flex:1;min-height:0;background:var(--card);border:2px solid var(--line);border-radius:22px;overflow:hidden;display:flex;position:relative}
 #scene{width:100%;height:100%;touch-action:none;display:block}
-.need{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;background:var(--card);font-size:22px;font-weight:700;color:var(--muted)}
+.panel{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;background:var(--card);overflow:auto}
+.story{font-family:var(--display);font-weight:600;font-size:clamp(26px,4.4vw,44px);line-height:1.45;max-width:24ch;text-wrap:balance}
+.need{font-size:22px;font-weight:700;color:var(--muted);max-width:30ch}
 .answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.ans{border:3px solid var(--line);border-radius:18px;padding:16px 10px;font-family:var(--display);font-weight:700;font-size:clamp(22px,3.6vw,32px);transition:transform .15s,border-color .2s,background .2s;background:var(--card)}
+.ans{border:3px solid var(--line);border-radius:18px;padding:14px 10px;font-family:var(--display);font-weight:700;font-size:clamp(21px,3.4vw,30px);transition:transform .15s,border-color .2s,background .2s;background:var(--card)}
 .ans:active{transform:scale(.97)}
+.ans b{color:var(--err);text-decoration:underline;text-underline-offset:4px}
 .ans.where{border-color:var(--where);background:#EEF4FF}
 .ans.what{border-color:var(--what);background:#EAFBF0}
 .ans.who{border-color:var(--who);background:#FFF3E3}
 .ans.does{border-color:var(--does);background:#FFF9DC}
+.ans.plain{border-color:#7E57C2;background:#F3EEFC}
 .ans.right{background:var(--ok-soft);border-color:var(--ok)}
 .ans.wrong{background:var(--err-soft);border-color:var(--err);animation:shake .35s}
 .ans.hint{border-color:var(--ok);border-style:dashed;border-width:4px}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* sentence builder */
+.build{display:flex;flex-direction:column;gap:10px}
+.slots,.bank{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.slot{min-width:120px;min-height:58px;border-radius:14px;border:3px dashed var(--rc);background:var(--card);display:grid;place-items:center;padding:6px 12px;font-family:var(--display);font-weight:700;font-size:clamp(20px,3vw,28px);position:relative}
+.slot small{position:absolute;top:-11px;left:10px;font-family:var(--body);font-size:11px;font-weight:800;letter-spacing:.06em;background:var(--rc);color:#fff;padding:1px 6px;border-radius:6px}
+.slot.filled{border-style:solid;background:var(--rs)}
+.slot.next{animation:pulse2 1.2s ease-in-out infinite}
+@keyframes pulse2{50%{box-shadow:0 0 0 6px var(--rs)}}
+.wcard{border-radius:14px;border:3px solid var(--rc);background:var(--rs);padding:10px 16px;font-family:var(--display);font-weight:700;font-size:clamp(20px,3vw,28px)}
+.wcard.wrong{animation:shake .35s;border-color:var(--err)}
+.wcard.hint{outline:4px dashed var(--ok);outline-offset:3px}
+.r-who{--rc:var(--who);--rs:var(--who-soft)} .r-does{--rc:var(--does);--rs:var(--does-soft)} .r-what{--rc:var(--what);--rs:var(--what-soft)} .r-where{--rc:var(--where);--rs:var(--where-soft)}
+
+/* say-it-yourself */
+.judge{display:flex;flex-direction:column;gap:10px}
+.model{text-align:center;font-family:var(--display);font-weight:700;font-size:clamp(24px,4vw,38px);padding:8px;border-radius:14px;background:var(--ok-soft);min-height:1.4em}
+.model.empty{background:transparent;color:var(--muted);font-size:18px}
+.jrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.jbtn{border-radius:16px;padding:14px 8px;font-weight:800;font-size:18px;border:3px solid var(--line);background:var(--card)}
+.jbtn.self{border-color:var(--ok);background:var(--ok-soft)}
+.jbtn.help{border-color:var(--does);background:var(--does-soft)}
+.jbtn.hintb{border-color:var(--where);background:var(--where-soft)}
 
 .wall{fill:var(--wall)} .floor{fill:var(--floor)} .rug{fill:var(--rug)}
 .wood{fill:#D2691E} .wood-dark{fill:#A0501A}
@@ -89,6 +116,7 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .box-back{fill:#E0912B} .box-in{fill:#A85F12} .box-front{fill:#FFB338} .box-edge{fill:#F29F1F}
 .basket{fill:#D99245}
 .label{font-family:var(--display);font-weight:700;font-size:26px;fill:#fff;letter-spacing:1px}
+.dlabel{font-family:var(--display);font-weight:700;font-size:21px;fill:var(--ink)}
 .zone{fill:rgba(21,101,255,.14);stroke:var(--where);stroke-width:5;stroke-dasharray:14 10;opacity:0;pointer-events:none}
 .zone.show{opacity:1;animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{50%{fill:rgba(21,101,255,.30)}}
@@ -99,6 +127,16 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .sheet h2{font-family:var(--display);font-size:36px;margin:0}
 .sheet p{margin:0;font-size:18px;color:var(--muted)}
 .big-btn{background:var(--where);color:#fff;font-family:var(--display);font-weight:700;font-size:24px;padding:14px 40px;border-radius:16px}
+
+.tanks{position:fixed;inset:0;background:var(--bg);z-index:25;overflow-y:auto}
+.tanks-in{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px;display:flex;flex-direction:column;gap:16px}
+.tanks h2{font-family:var(--display);font-size:30px;margin:0;flex:1}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.tcard{background:var(--card);border:3px solid var(--line);border-radius:18px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.tcard.got{border-color:#3F7D3A}
+.tcard svg{width:100%;height:90px}
+.tcard b{font-family:var(--display);font-size:22px}
+.tcard span{font-size:13px;color:var(--muted)}
 
 .parent{position:fixed;inset:0;background:var(--bg);z-index:30;overflow-y:auto;-webkit-user-select:text;user-select:text}
 .parent-in{max-width:780px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px;display:flex;flex-direction:column;gap:16px}
@@ -117,6 +155,8 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .ready{border-radius:14px;padding:12px 14px;background:var(--where-soft);display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .ready.go{background:var(--ok-soft)}
 .ready b{font-variant-numeric:tabular-nums}
+details.pbox summary{cursor:pointer;font-weight:800;font-size:17px}
+details.pbox[open] summary{margin-bottom:4px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
 .stat{border:1px solid var(--line);border-radius:14px;padding:10px 12px}
 .stat b{font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums}
@@ -130,6 +170,10 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .addph label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:800;color:var(--muted)}
 .addph input[type=text]{font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;color:var(--ink);background:var(--card)}
 .addph input[type=file]{font-size:14px;max-width:100%}
+.dayed{display:flex;flex-direction:column;gap:6px}
+.dayed .row{border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+.dayed .nm{flex:1;min-width:120px;font-weight:700}
+.dayed .nm.off{color:var(--muted);text-decoration:line-through}
 .logwrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
 th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -140,7 +184,7 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
 .danger{color:var(--err)}
 .msg{font-size:14px;font-weight:700;color:var(--err)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-@media (max-width:520px){.tile{min-height:0}.tile .tile-art{height:80px}.speak{width:52px;height:52px}}
+@media (max-width:520px){.speak{width:52px;height:52px}.slot{min-width:96px}}
 </style>
 
 </head>
@@ -159,30 +203,7 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
     </button>
   </header>
 
-  <section class="home" id="home">
-    <button class="tile" id="goPred">
-      <svg class="tile-art" viewBox="0 0 300 110" aria-hidden="true">
-        <rect x="70" y="52" width="160" height="12" rx="4" class="wood"/>
-        <rect x="82" y="64" width="10" height="44" class="wood-dark"/><rect x="208" y="64" width="10" height="44" class="wood-dark"/>
-        <g transform="translate(150,30) scale(.5)"><circle r="40" fill="#E2533B"/><path d="M-40,0 Q0,-18 40,0" stroke="#fff" stroke-width="6" fill="none"/></g>
-        <rect x="96" y="12" width="44" height="24" rx="6" fill="#1565FF"/><text x="118" y="30" text-anchor="middle" class="label" style="font-size:16px">НА</text>
-      </svg>
-      <h2>Куда положить?</h2>
-      <span class="lvl-pill" id="pillPred"></span>
-      <p>Слушай и перетаскивай пальцем.</p>
-    </button>
-    <button class="tile" id="goQ">
-      <svg class="tile-art" viewBox="0 0 300 110" aria-hidden="true">
-        <rect x="20" y="30" width="80" height="50" rx="12" fill="#12A84A"/><text x="60" y="64" text-anchor="middle" class="label" style="font-size:22px">ЧТО?</text>
-        <rect x="110" y="30" width="80" height="50" rx="12" fill="#1565FF"/><text x="150" y="64" text-anchor="middle" class="label" style="font-size:22px">ГДЕ?</text>
-        <rect x="200" y="30" width="80" height="50" rx="12" fill="#F57C00"/><text x="240" y="64" text-anchor="middle" class="label" style="font-size:22px">КТО?</text>
-      </svg>
-      <h2>Вопросы</h2>
-      <span class="lvl-pill" id="pillQ"></span>
-      <p>Читай вопрос и выбирай ответ.</p>
-    </button>
-    <p class="home-note">Для родителей: удерживайте шестеренку, чтобы открыть уровни, фото семьи и журнал.</p>
-  </section>
+  <section class="home" id="home"></section>
 
   <section class="play" id="play" hidden>
     <div class="task" id="task">
@@ -192,42 +213,53 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
       </button>
     </div>
     <div class="scene-wrap">
-      <svg id="scene" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-label="Комната">
-        <rect class="wall" x="0" y="0" width="1000" height="540"/>
-        <rect class="floor" x="0" y="540" width="1000" height="60"/>
+      <svg id="scene" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-label="Картинка задания">
+        <rect class="wall" id="wallR" x="0" y="0" width="1000" height="540"/>
+        <rect class="floor" id="floorR" x="0" y="540" width="1000" height="60"/>
         <g id="sBack"></g>
         <g id="layerBack"></g>
         <g id="sFront"></g>
         <g id="sZones"></g>
         <g id="layerTop"></g>
       </svg>
-      <div class="need" id="need" hidden></div>
+      <div class="panel" id="panel" hidden></div>
     </div>
     <div class="answers" id="answers" hidden></div>
+    <div class="build" id="build" hidden><div class="slots" id="slots"></div><div class="bank" id="bank"></div></div>
+    <div class="judge" id="judge" hidden></div>
   </section>
 </div>
 
 <div class="overlay" id="reward" hidden>
   <div class="sheet">
-    <svg viewBox="-60 -50 120 100" width="180" height="150" aria-hidden="true" id="rewardArt"></svg>
+    <svg viewBox="-60 -50 120 100" width="200" height="160" aria-hidden="true" id="rewardArt"></svg>
     <h2>Молодец!</h2>
     <p id="rewardText"></p>
     <button class="big-btn" id="rewardNext">Дальше</button>
   </div>
 </div>
 
+<div class="tanks" id="tanks" hidden>
+  <div class="tanks-in">
+    <div class="row"><h2>Мои танки</h2><button class="ghost" id="tanksClose">Назад</button></div>
+    <p class="hint-txt" id="tanksNote"></p>
+    <div class="tgrid" id="tgrid"></div>
+  </div>
+</div>
+
 <div class="parent" id="parent" hidden>
   <div class="parent-in">
     <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
-    <div class="pbox" id="trackPred"></div>
-    <div class="pbox" id="trackQ"></div>
-    <div class="pbox">
-      <h3>Ступени подсказок</h3>
-      <p class="hint-txt">Внутри уровня ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Предлоги: 1 — слово, голос и подсвеченное место; 2 — слово и голос; 3 — только голос. Вопросы: 1 — два варианта ответа; 2 — больше вариантов; 3 — вопрос только голосом. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
-    </div>
-    <div class="pbox">
-      <h3>Фото семьи (для вопросов «Кто это?» и «Что делает?»)</h3>
-      <p class="hint-txt">Добавьте фото людей, которых Алан знает. Имя пишите так, как он их называет: «мама», «папа», «Алан». «Что делает» — одно слово: «ест», «спит», «играет». Для «Кто это?» нужно минимум два разных человека.</p>
+    <p class="hint-txt">В каждом модуле: уровни — новое содержание, ступени — сколько подсказок. Ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
+    <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
+    <details class="pbox">
+      <summary>Распорядок дня для модуля «Мой день»</summary>
+      <p class="hint-txt">Оставьте то, что есть в дне Алана, и расставьте в правильном порядке.</p>
+      <div class="dayed" id="dayEd"></div>
+    </details>
+    <details class="pbox">
+      <summary>Фото семьи (для «Кто это?» и «Что делает?»)</summary>
+      <p class="hint-txt">Имя пишите так, как Алан называет человека: «мама», «папа», «Алан». «Что делает» — одно слово: «ест», «спит». Для «Кто это?» нужно минимум два разных человека.</p>
       <div class="photos" id="photoList"></div>
       <div class="addph">
         <label>Фото<input type="file" id="phFile" accept="image/*"></label>
@@ -236,7 +268,7 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
         <button class="primary" id="phAdd">Добавить фото</button>
       </div>
       <span class="msg" id="phMsg"></span>
-    </div>
+    </details>
     <div class="pbox">
       <h3>Голос</h3>
       <div class="row"><span class="lbl">Озвучка</span><span class="seg" id="soundSeg"></span></div>
@@ -247,9 +279,9 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
       <div class="stats" id="stats"></div>
     </div>
     <div class="pbox">
-      <h3>Журнал (последние 60 заданий)</h3>
-      <div class="logwrap"><table><thead><tr><th>Время</th><th>Задание</th><th>Ответ</th><th></th><th>Ур.</th><th>Ст.</th></tr></thead><tbody id="logBody"></tbody></table></div>
-      <p class="hint-txt">Журнал и фото хранятся только на этом устройстве, в этом браузере.</p>
+      <h3>Журнал (последние 80 заданий)</h3>
+      <div class="logwrap"><table><thead><tr><th>Время</th><th>Модуль</th><th>Задание</th><th>Ответ</th><th></th><th>Ур.</th><th>Ст.</th></tr></thead><tbody id="logBody"></tbody></table></div>
+      <p class="hint-txt">Журнал, фото и прогресс хранятся только на этом устройстве, в этом браузере.</p>
       <div class="row" id="clearRow"></div>
     </div>
   </div>
@@ -262,21 +294,51 @@ const NS = "http://www.w3.org/2000/svg";
 const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
 const rnd = a => a[Math.floor(Math.random()*a.length)];
 const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const uniq = a => [...new Set(a)];
 const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-/* ================= content ================= */
+/* ================= objects ================= */
 const OBJS = [
-  {id:"ball", nom:"мяч", acc:"мяч", svg:'<circle r="40" fill="#E2533B"/><circle cx="-13" cy="-14" r="9" fill="rgba(255,255,255,.35)"/><path d="M-40,0 Q0,-18 40,0" stroke="#fff" stroke-width="5" fill="none"/><path d="M-31,25 Q0,9 31,25" stroke="#fff" stroke-width="5" fill="none"/>'},
-  {id:"apple", nom:"яблоко", acc:"яблоко", svg:'<path d="M0,-26 C-30,-44 -48,-8 -40,14 C-32,38 -12,44 0,36 C12,44 32,38 40,14 C48,-8 30,-44 0,-26Z" fill="#D8392B"/><path d="M0,-26 L4,-44" stroke="#5B3A1E" stroke-width="5" stroke-linecap="round"/><path d="M6,-38 C18,-52 32,-46 32,-40 C22,-32 12,-32 6,-38Z" fill="#3E9B4F"/><ellipse cx="-16" cy="-6" rx="7" ry="11" fill="rgba(255,255,255,.3)"/>'},
-  {id:"bear", nom:"мишка", acc:"мишку", svg:'<circle cx="-27" cy="-28" r="14" fill="#9A6A3E"/><circle cx="27" cy="-28" r="14" fill="#9A6A3E"/><circle cx="-27" cy="-28" r="7" fill="#D7AE7E"/><circle cx="27" cy="-28" r="7" fill="#D7AE7E"/><circle r="38" fill="#A8743F"/><ellipse cy="12" rx="17" ry="13" fill="#E6C79F"/><ellipse cy="6" rx="7" ry="5" fill="#3B2A1E"/><circle cx="-13" cy="-8" r="4.5" fill="#3B2A1E"/><circle cx="13" cy="-8" r="4.5" fill="#3B2A1E"/>'},
-  {id:"tank", nom:"танк", acc:"танк", svg:'<rect x="-48" y="6" width="96" height="26" rx="13" fill="#3F4A3C"/><circle cx="-32" cy="19" r="7" fill="#7C877A"/><circle cx="-11" cy="19" r="7" fill="#7C877A"/><circle cx="11" cy="19" r="7" fill="#7C877A"/><circle cx="32" cy="19" r="7" fill="#7C877A"/><rect x="-42" y="-8" width="84" height="18" rx="4" fill="#5E7F4A"/><rect x="-22" y="-28" width="44" height="22" rx="9" fill="#6F9257"/><rect x="18" y="-22" width="40" height="8" rx="3" fill="#4E6B3D"/><circle cx="-6" cy="-17" r="4" fill="#E9C84A"/>'},
-  {id:"car", nom:"машинка", acc:"машинку", svg:'<path d="M-26,-6 L-16,-28 L18,-28 L30,-6Z" fill="#1E88E5"/><rect x="-46" y="-8" width="92" height="30" rx="10" fill="#1E88E5"/><path d="M-19,-8 L-12,-23 L-1,-23 L-1,-8Z M4,-8 L4,-23 L15,-23 L24,-8Z" fill="#CFE8FF"/><circle cx="-26" cy="22" r="11" fill="#263238"/><circle cx="26" cy="22" r="11" fill="#263238"/><circle cx="-26" cy="22" r="4" fill="#B0BEC5"/><circle cx="26" cy="22" r="4" fill="#B0BEC5"/>'},
-  {id:"cube", nom:"кубик", acc:"кубик", svg:'<rect x="-36" y="-36" width="72" height="72" rx="8" fill="#FFC107" stroke="#E0A000" stroke-width="4"/><text y="21" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="700" font-size="56" fill="#C62828">А</text>'},
-  {id:"book", nom:"книга", acc:"книгу", svg:'<rect x="-38" y="-30" width="76" height="60" rx="5" fill="#8E24AA"/><rect x="-38" y="-30" width="12" height="60" rx="3" fill="#6A1B9A"/><rect x="-20" y="-16" width="44" height="8" rx="3" fill="#F3E5F5"/><rect x="-20" y="-2" width="30" height="6" rx="3" fill="#E1BEE7"/>'},
-  {id:"banana", nom:"банан", acc:"банан", svg:'<path d="M-44,-14 C-30,26 24,34 44,-6 C38,-4 34,-2 30,2 C14,22 -20,16 -34,-16 Z" fill="#FFD600" stroke="#E6B800" stroke-width="3"/><path d="M-44,-14 L-48,-22" stroke="#6D4C41" stroke-width="5" stroke-linecap="round"/>'}
+  {id:"ball", scene:1, toy:1, nom:"мяч", acc:"мяч", gen:"мяча", ins:"мячом", svg:'<circle r="40" fill="#E2533B"/><circle cx="-13" cy="-14" r="9" fill="rgba(255,255,255,.35)"/><path d="M-40,0 Q0,-18 40,0" stroke="#fff" stroke-width="5" fill="none"/><path d="M-31,25 Q0,9 31,25" stroke="#fff" stroke-width="5" fill="none"/>'},
+  {id:"apple", scene:1, nom:"яблоко", acc:"яблоко", gen:"яблока", ins:"яблоком", svg:'<path d="M0,-26 C-30,-44 -48,-8 -40,14 C-32,38 -12,44 0,36 C12,44 32,38 40,14 C48,-8 30,-44 0,-26Z" fill="#D8392B"/><path d="M0,-26 L4,-44" stroke="#5B3A1E" stroke-width="5" stroke-linecap="round"/><path d="M6,-38 C18,-52 32,-46 32,-40 C22,-32 12,-32 6,-38Z" fill="#3E9B4F"/><ellipse cx="-16" cy="-6" rx="7" ry="11" fill="rgba(255,255,255,.3)"/>'},
+  {id:"bear", scene:1, toy:1, nom:"мишка", acc:"мишку", gen:"мишки", ins:"мишкой", svg:'<circle cx="-27" cy="-28" r="14" fill="#9A6A3E"/><circle cx="27" cy="-28" r="14" fill="#9A6A3E"/><circle cx="-27" cy="-28" r="7" fill="#D7AE7E"/><circle cx="27" cy="-28" r="7" fill="#D7AE7E"/><circle r="38" fill="#A8743F"/><ellipse cy="12" rx="17" ry="13" fill="#E6C79F"/><ellipse cy="6" rx="7" ry="5" fill="#3B2A1E"/><circle cx="-13" cy="-8" r="4.5" fill="#3B2A1E"/><circle cx="13" cy="-8" r="4.5" fill="#3B2A1E"/>'},
+  {id:"tank", scene:1, toy:1, nom:"танк", acc:"танк", gen:"танка", ins:"танком", svg:'<rect x="-48" y="6" width="96" height="26" rx="13" fill="#3F4A3C"/><circle cx="-32" cy="19" r="7" fill="#7C877A"/><circle cx="-11" cy="19" r="7" fill="#7C877A"/><circle cx="11" cy="19" r="7" fill="#7C877A"/><circle cx="32" cy="19" r="7" fill="#7C877A"/><rect x="-42" y="-8" width="84" height="18" rx="4" fill="#5E7F4A"/><rect x="-22" y="-28" width="44" height="22" rx="9" fill="#6F9257"/><rect x="18" y="-22" width="40" height="8" rx="3" fill="#4E6B3D"/><circle cx="-6" cy="-17" r="4" fill="#E9C84A"/>'},
+  {id:"car", scene:1, toy:1, nom:"машинка", acc:"машинку", gen:"машинки", ins:"машинкой", svg:'<path d="M-26,-6 L-16,-28 L18,-28 L30,-6Z" fill="#1E88E5"/><rect x="-46" y="-8" width="92" height="30" rx="10" fill="#1E88E5"/><path d="M-19,-8 L-12,-23 L-1,-23 L-1,-8Z M4,-8 L4,-23 L15,-23 L24,-8Z" fill="#CFE8FF"/><circle cx="-26" cy="22" r="11" fill="#263238"/><circle cx="26" cy="22" r="11" fill="#263238"/><circle cx="-26" cy="22" r="4" fill="#B0BEC5"/><circle cx="26" cy="22" r="4" fill="#B0BEC5"/>'},
+  {id:"cube", scene:1, toy:1, nom:"кубик", acc:"кубик", gen:"кубика", ins:"кубиком", svg:'<rect x="-36" y="-36" width="72" height="72" rx="8" fill="#FFC107" stroke="#E0A000" stroke-width="4"/><text y="21" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="700" font-size="56" fill="#C62828">А</text>'},
+  {id:"book", scene:1, nom:"книга", acc:"книгу", gen:"книги", ins:"книгой", svg:'<rect x="-38" y="-30" width="76" height="60" rx="5" fill="#8E24AA"/><rect x="-38" y="-30" width="12" height="60" rx="3" fill="#6A1B9A"/><rect x="-20" y="-16" width="44" height="8" rx="3" fill="#F3E5F5"/><rect x="-20" y="-2" width="30" height="6" rx="3" fill="#E1BEE7"/>'},
+  {id:"banana", scene:1, nom:"банан", acc:"банан", gen:"банана", ins:"бананом", svg:'<path d="M-44,-14 C-30,26 24,34 44,-6 C38,-4 34,-2 30,2 C14,22 -20,16 -34,-16 Z" fill="#FFD600" stroke="#E6B800" stroke-width="3"/><path d="M-44,-14 L-48,-22" stroke="#6D4C41" stroke-width="5" stroke-linecap="round"/>'},
+  {id:"milk", nom:"молоко", acc:"молоко", gen:"молока", ins:"молоком", svg:'<path d="M-24,-38 L24,-38 L18,38 L-18,38Z" fill="#E3F2FD" stroke="#64B5F6" stroke-width="4"/><path d="M-21,-14 L21,-14 L18,38 L-18,38Z" fill="#FFF8E1"/><path d="M-24,-38 L24,-38 L18,38 L-18,38Z" fill="none" stroke="#64B5F6" stroke-width="4"/>'},
+  {id:"water", nom:"вода", acc:"воду", gen:"воды", ins:"водой", svg:'<path d="M-24,-38 L24,-38 L18,38 L-18,38Z" fill="#E3F2FD"/><path d="M-21,-10 L21,-10 L18,38 L-18,38Z" fill="#64B5F6"/><path d="M-24,-38 L24,-38 L18,38 L-18,38Z" fill="none" stroke="#1E88E5" stroke-width="4"/>'},
+  {id:"candy", nom:"конфета", acc:"конфету", gen:"конфеты", ins:"конфетой", svg:'<path d="M-26,0 L-46,-16 L-46,16Z M26,0 L46,-16 L46,16Z" fill="#F06292"/><ellipse rx="28" ry="20" fill="#E91E63"/><path d="M-10,-17 L-4,17 M5,-18 L11,16" stroke="#fff" stroke-width="4"/>'}
 ];
-const BASE4 = OBJS.slice(0,4), ALL8 = OBJS;
+const OBJ = id => OBJS.find(o=>o.id===id);
+const SCENE_OBJS = OBJS.filter(o=>o.scene), BASE4 = SCENE_OBJS.slice(0,4);
 
+/* ================= characters & actions ================= */
+const CHARS = [{id:"cat", nom:"кот"},{id:"dog", nom:"собака"},{id:"bear", nom:"мишка"}];
+function charSvg(id, closed){
+  const eyes = closed ? '<path d="M-19,-12 q6,5 12,0 M7,-12 q6,5 12,0" stroke="#2B1D12" stroke-width="3.5" fill="none" stroke-linecap="round"/>' : '<circle cx="-13" cy="-12" r="4.5" fill="#2B1D12"/><circle cx="13" cy="-12" r="4.5" fill="#2B1D12"/>';
+  if(id==="cat") return `<ellipse cx="0" cy="46" rx="34" ry="28" fill="#F28C28"/><path d="M-30,-26 L-24,-58 L-6,-38Z M30,-26 L24,-58 L6,-38Z" fill="#F28C28"/><circle cx="0" cy="-8" r="34" fill="#F7A440"/>${eyes}<path d="M-4,2 L4,2 L0,7Z" fill="#E57373"/><path d="M-10,6 H-34 M-10,10 L-32,16 M10,6 H34 M10,10 L32,16" stroke="#7A4A1A" stroke-width="2"/>`;
+  if(id==="dog") return `<ellipse cx="0" cy="46" rx="34" ry="28" fill="#B07A45"/><circle cx="0" cy="-8" r="34" fill="#C8955C"/><ellipse cx="-32" cy="-4" rx="11" ry="24" fill="#7A4E26"/><ellipse cx="32" cy="-4" rx="11" ry="24" fill="#7A4E26"/>${eyes}<ellipse cx="0" cy="6" rx="8" ry="6" fill="#2B1D12"/><path d="M0,12 Q0,20 -8,20 M0,12 Q0,20 8,20" stroke="#2B1D12" stroke-width="2.5" fill="none"/>`;
+  return `<ellipse cx="0" cy="46" rx="34" ry="28" fill="#9A6A3E"/><circle cx="-26" cy="-34" r="13" fill="#9A6A3E"/><circle cx="26" cy="-34" r="13" fill="#9A6A3E"/><circle cx="0" cy="-8" r="34" fill="#A8743F"/><ellipse cx="0" cy="6" rx="15" ry="11" fill="#E6C79F"/>${eyes}<ellipse cx="0" cy="1" rx="6" ry="4" fill="#3B2A1E"/>`;
+}
+const ACTS = {
+  spit:   {v:"спит", closed:1, prop:()=>'<text x="38" y="-48" font-family="Rubik,sans-serif" font-weight="700" font-size="28" fill="#1565FF">Z</text><text x="58" y="-72" font-family="Rubik,sans-serif" font-weight="700" font-size="20" fill="#1565FF">z</text>'},
+  sidit:  {v:"сидит", prop:()=>''},
+  begaet: {v:"бежит", prop:()=>'<path d="M-62,22 H-96 M-58,40 H-100 M-62,58 H-90" stroke="#4A5A68" stroke-width="5" stroke-linecap="round"/>'},
+  est:    {v:"ест", objs:["apple","banana","candy"], at:[48,6,.55]},
+  pyet:   {v:"пьет", objs:["milk","water"], at:[48,6,.55]},
+  chitaet:{v:"читает", objs:["book"], at:[0,42,.75]},
+  kataet: {v:"катает", objs:["ball","car"], at:[56,64,.55], needObj:1}
+};
+function actorSvg(ch, actKey, objId){
+  const A=ACTS[actKey]; let p=A.prop?A.prop():"";
+  if(objId){ const [x,y,s]=A.at; p+=`<g transform="translate(${x},${y}) scale(${s})">${OBJ(objId).svg}</g>`; }
+  if(actKey==="begaet") return `<g transform="rotate(-6)">${charSvg(ch.id,false)}</g>${p}`;
+  return charSvg(ch.id, !!A.closed)+p;
+}
+
+/* ================= places ================= */
 const CONT_ZONES = {v:[625,300,845,560], ryadom:[850,380,1000,560]};
 const PLACES = {
   table:{kind:"surface", acc:"стол", loc:"столе", ins:"столом", gen:"стола",
@@ -295,10 +357,8 @@ const PLACES = {
     zones:CONT_ZONES, pos:{v:[735,412], ryadom:[920,495]}}
 };
 const SCENES = {A:["table","box"], B:["chair","basket"]};
-const RUG = '<ellipse class="rug" cx="110" cy="548" rx="92" ry="18"/>';
-const START = [110,500];
-
-/* prepositions: how the instruction and the answer are phrased */
+const RUG = '<ellipse class="rug" cx="120" cy="548" rx="100" ry="18"/>';
+const START1 = [[120,500]], START2 = [[75,500],[170,500]];
 const PREPS = {
   na:    {w:"НА",      kind:"surface",   word:p=>p.acc, ans:p=>"НА "+p.loc},
   pod:   {w:"ПОД",     kind:"surface",   word:p=>p.acc, ans:p=>"ПОД "+p.ins},
@@ -306,35 +366,130 @@ const PREPS = {
   ryadom:{w:"РЯДОМ С", kind:"container", word:p=>p.ins, ans:p=>"РЯДОМ С "+p.ins},
   iz:    {w:"ИЗ",      kind:"container", word:p=>p.gen, ans:p=>"ИЗ "+p.gen, verb:"Достань"}
 };
+const placeFor = (sc, pk) => PLACES[SCENES[sc][PREPS[pk].kind==="surface"?0:1]];
+const gdePhrase = (sc, pk) => PREPS[pk].ans(placeFor(sc,pk)).toLowerCase();
 
-/* levels: content grows; hint stages live inside each level */
-const LEVELS = {
-  pred:[
-    {name:"НА и В", preps:["na","v"], scenes:["A"], objs:BASE4},
-    {name:"НА, В, ПОД", preps:["na","v","pod"], scenes:["A"], objs:BASE4},
-    {name:"Новые предметы и места", preps:["na","v","pod"], scenes:["A","B"], objs:ALL8},
-    {name:"+ РЯДОМ С и ИЗ", preps:["na","v","pod","ryadom","iz"], scenes:["A","B"], objs:ALL8}
-  ],
-  q:[
-    {name:"Что это?", main:"chto", mix:{chto:1}},
-    {name:"Где?", main:"gde", mix:{gde:.7, chto:.3}},
-    {name:"Кто это? (фото семьи)", main:"kto", mix:{kto:.6, gde:.2, chto:.2}},
-    {name:"Что делает? (фото семьи)", main:"delaet", mix:{delaet:.6, kto:.2, gde:.2}}
-  ]
+/* ================= day schedule ================= */
+const DAY_ITEMS = [
+  {id:"breakfast", name:"завтрак", gen:"завтрака", time:"утром", icon:'<circle r="32" fill="#fff" stroke="#B0BEC5" stroke-width="5"/><ellipse cx="-4" cy="2" rx="18" ry="14" fill="#fff" stroke="#E0E0E0" stroke-width="2"/><circle cx="-4" cy="2" r="8" fill="#FFC107"/>'},
+  {id:"study", name:"занятия", gen:"занятий", time:"утром", icon:'<rect x="-30" y="-22" width="44" height="44" rx="4" fill="#42A5F5"/><rect x="-24" y="-16" width="32" height="5" fill="#E3F2FD"/><rect x="-24" y="-6" width="24" height="4" fill="#E3F2FD"/><path d="M16,24 L34,-24 L40,-21 L22,27Z" fill="#FFB300"/><path d="M16,24 L22,27 L17,32Z" fill="#5D4037"/>'},
+  {id:"walk", name:"прогулка", gen:"прогулки", time:"днем", icon:'<circle cx="24" cy="-24" r="12" fill="#FFC107"/><rect x="-14" y="4" width="10" height="30" fill="#795548"/><circle cx="-9" cy="-8" r="24" fill="#43A047"/>'},
+  {id:"lunch", name:"обед", gen:"обеда", time:"днем", icon:'<path d="M-34,-2 H34 Q30,30 0,32 Q-30,30 -34,-2Z" fill="#FF7043"/><path d="M-12,-10 q-6,-10 0,-20 M0,-10 q-6,-10 0,-20 M12,-10 q-6,-10 0,-20" stroke="#90A4AE" stroke-width="4" fill="none"/>'},
+  {id:"play", name:"игры", gen:"игр", time:"днем", icon:'<rect x="-34" y="-6" width="34" height="34" rx="5" fill="#FFC107" stroke="#E0A000" stroke-width="3"/><circle cx="18" cy="8" r="20" fill="#E2533B"/>'},
+  {id:"dinner", name:"ужин", gen:"ужина", time:"вечером", icon:'<circle r="32" fill="#fff" stroke="#B0BEC5" stroke-width="5"/><circle cx="-8" cy="-4" r="7" fill="#7CB342"/><circle cx="6" cy="-6" r="7" fill="#7CB342"/><circle cx="0" cy="8" r="7" fill="#7CB342"/><rect x="-6" y="-2" width="20" height="10" rx="5" fill="#A1887F"/>'},
+  {id:"bath", name:"купание", gen:"купания", time:"вечером", icon:'<path d="M-36,0 H36 V12 Q36,30 18,30 H-18 Q-36,30 -36,12Z" fill="#4FC3F7"/><circle cx="-14" cy="-10" r="8" fill="#E1F5FE" stroke="#81D4FA" stroke-width="2"/><circle cx="4" cy="-16" r="6" fill="#E1F5FE" stroke="#81D4FA" stroke-width="2"/><circle cx="18" cy="-8" r="7" fill="#E1F5FE" stroke="#81D4FA" stroke-width="2"/>'},
+  {id:"sleep", name:"сон", gen:"сна", time:"вечером", icon:'<path d="M8,-30 A30,30 0 1,0 30,12 A24,24 0 1,1 8,-30Z" fill="#5C6BC0"/><circle cx="-22" cy="-22" r="4" fill="#FFC107"/><circle cx="26" cy="-26" r="3" fill="#FFC107"/>'}
+];
+const DAY = id => DAY_ITEMS.find(d=>d.id===id);
+
+/* ================= reading stories ================= */
+const STORIES = [
+  [1,"Кот спит.","Кто спит?","Кот",["Собака","Мишка"]],
+  [1,"Собака ест.","Кто ест?","Собака",["Кот","Мама"]],
+  [1,"Мама читает.","Что делает мама?","Читает",["Спит","Ест"]],
+  [1,"Папа пьет чай.","Что пьет папа?","Чай",["Молоко","Воду"]],
+  [1,"Алан ест банан.","Что ест Алан?","Банан",["Яблоко","Конфету"]],
+  [1,"Мяч на столе.","Где мяч?","На столе",["Под столом","В коробке"]],
+  [1,"Танк в коробке.","Где танк?","В коробке",["На столе","Под столом"]],
+  [1,"Мишка спит.","Что делает мишка?","Спит",["Бежит","Ест"]],
+  [2,"Алан взял мяч. Мяч упал под стол.","Где мяч?","Под столом",["На столе","В коробке"]],
+  [2,"Мама дала Алану яблоко. Алан съел яблоко.","Что съел Алан?","Яблоко",["Банан","Конфету"]],
+  [2,"Папа пришел домой. Папа читает книгу.","Что читает папа?","Книгу",["Журнал","Письмо"]],
+  [2,"Кот сидит на стуле. Собака спит под столом.","Где спит собака?","Под столом",["На стуле","В коробке"]],
+  [2,"Алан играет с танком. Танк зеленый.","С чем играет Алан?","С танком",["С мячом","С мишкой"]],
+  [2,"На улице дождь. Алан взял зонт.","Что взял Алан?","Зонт",["Мяч","Книгу"]],
+  [2,"Мама положила книгу в коробку. Коробка стоит на полу.","Где книга?","В коробке",["На столе","Под стулом"]],
+  [2,"Собака бежит. Кот спит.","Кто спит?","Кот",["Собака","Алан"]],
+  [3,"Утром Алан проснулся. Потом он позавтракал. Потом пошел гулять.","Что Алан сделал после завтрака?","Пошел гулять",["Проснулся","Лег спать"]],
+  [3,"Алан нашел мяч. Мяч был под кроватью. Алан положил мяч в коробку.","Где сейчас мяч?","В коробке",["Под кроватью","На столе"]],
+  [3,"Кот хотел пить. Мама налила молоко. Кот выпил молоко.","Почему мама налила молоко?","Кот хотел пить",["Кот хотел спать","Кот хотел гулять"]],
+  [3,"Папа купил Алану танк. Алан был рад. Он играл с танком весь день.","Кто купил танк?","Папа",["Мама","Алан"]],
+  [3,"Вечером Алан искупался. Потом мама почитала книгу. Потом Алан лег спать.","Что было после купания?","Мама почитала книгу",["Алан лег спать","Алан пошел гулять"]],
+  [3,"Собака лаяла. Она хотела гулять. Папа взял собаку на прогулку.","Почему собака лаяла?","Хотела гулять",["Хотела есть","Хотела спать"]],
+  [3,"Алан рисует. У него красный карандаш. Он рисует солнце.","Что рисует Алан?","Солнце",["Дом","Танк"]],
+  [3,"Мама пошла в магазин. Она купила хлеб и молоко. Потом мама пришла домой.","Что купила мама?","Хлеб и молоко",["Хлеб и сыр","Яблоки"]]
+].map(([lvl,text,q,a,w])=>({lvl,text,q,a,w}));
+
+/* ================= tanks ================= */
+const TANKS = [["Т-34","#5E7F4A"],["КВ-1","#4F6B3E"],["ИС-2","#6B7F52"],["Т-55","#7A8B5A"],["Т-72","#8A7F55"],["Т-90","#6F7F60"],["Тигр","#A08B5A"],["Пантера","#9A7B4F"],["Шерман","#6E7A4A"],["Абрамс","#B8A77A"],["Леопард","#5F6F5A"],["Меркава","#A89B7A"]];
+function tankSvg(c){ return `<rect x="-48" y="6" width="96" height="26" rx="13" fill="#3F4A3C"/><circle cx="-32" cy="19" r="7" fill="#7C877A"/><circle cx="-11" cy="19" r="7" fill="#7C877A"/><circle cx="11" cy="19" r="7" fill="#7C877A"/><circle cx="32" cy="19" r="7" fill="#7C877A"/><rect x="-42" y="-8" width="84" height="18" rx="4" fill="${c}"/><rect x="-22" y="-28" width="44" height="22" rx="9" fill="${c}"/><rect x="18" y="-22" width="40" height="8" rx="3" fill="#3F4A3C"/><circle cx="-6" cy="-17" r="4" fill="#E9C84A"/>`; }
+
+/* ================= tracks & levels ================= */
+const TRACKS = {
+  pred:{title:"Куда положить?", c:"#1565FF", b:"#EEF4FF", sub:"Слушай и перетаскивай пальцем.", chips:[["НА","#1565FF"],["ПОД","#1565FF"],["В","#1565FF"]],
+    stages:"1 — слово, голос и подсвеченное место; 2 — слово и голос; 3 — только голос.",
+    levels:[
+      {name:"НА и В", preps:["na","v"], scenes:["A"], objs:BASE4},
+      {name:"НА, В, ПОД", preps:["na","v","pod"], scenes:["A"], objs:BASE4},
+      {name:"Новые предметы и места", preps:["na","v","pod"], scenes:["A","B"], objs:SCENE_OBJS},
+      {name:"+ РЯДОМ С и ИЗ", preps:["na","v","pod","ryadom","iz"], scenes:["A","B"], objs:SCENE_OBJS},
+      {name:"Две инструкции подряд", preps:["na","v","pod","ryadom"], scenes:["A","B"], objs:SCENE_OBJS, two:1}
+    ]},
+  q:{title:"Вопросы", c:"#12A84A", b:"#EAFBF0", sub:"Читай вопрос и выбирай ответ.", chips:[["ЧТО?","#12A84A"],["ГДЕ?","#1565FF"],["КТО?","#F57C00"]],
+    stages:"1 — два варианта ответа; 2 — больше вариантов; 3 — вопрос только голосом.",
+    levels:[
+      {name:"Что это?", main:"chto", mix:{chto:1}},
+      {name:"Где?", main:"gde", mix:{gde:.7, chto:.3}},
+      {name:"Кто это? (фото семьи)", main:"kto", mix:{kto:.6, gde:.2, chto:.2}},
+      {name:"Что делает? (фото семьи)", main:"delaet", mix:{delaet:.6, kto:.2, gde:.2}}
+    ]},
+  sent:{title:"Предложения", c:"#F57C00", b:"#FFF3E3", sub:"Собери предложение из цветных карточек.", chips:[["КТО","#F57C00"],["ДЕЛАЕТ","#E0A800"],["ЧТО","#12A84A"]],
+    stages:"1 — только нужные карточки; 2 — плюс лишние; 3 — больше лишних, без подсветки.",
+    levels:[
+      {name:"Кто + что делает", roles:["kto","delaet"]},
+      {name:"Кто + что делает + что", roles:["kto","delaet","chto"]},
+      {name:"Кто + что делает + где", roles:["kto","delaet","gde"]},
+      {name:"Кто + что делает + что + где", roles:["kto","delaet","chto","gde"]}
+    ]},
+  form:{title:"Формы слов", c:"#E91E63", b:"#FDEBF2", sub:"Дай воду, нет воды, играю с мячом.", chips:[["ДАЙ","#E91E63"],["НЕТ","#E91E63"]],
+    stages:"1 — два варианта; 2 — три варианта; 3 — фраза только голосом.",
+    levels:[
+      {name:"Дай … (воду, книгу)", frames:["dai"]},
+      {name:"Нет … (воды, мяча)", frames:["net"]},
+      {name:"Играю с … (мячом, мишкой)", frames:["igr"]},
+      {name:"Все вместе", frames:["dai","net","igr"]}
+    ]},
+  say:{title:"Скажи сам", c:"#7E57C2", b:"#F3EEFC", sub:"Вместе с родителем: говорим вслух.", chips:[["СКАЖИ","#7E57C2"]],
+    stages:"1 — ответ написан, можно прочитать; 2 — видно только начало; 3 — без подсказки.",
+    levels:[
+      {name:"Назови предмет", kind:"name"},
+      {name:"Где? (предлог + место)", kind:"where"},
+      {name:"Кто что делает", kind:"act"},
+      {name:"Полное предложение", kind:"full"}
+    ]},
+  day:{title:"Мой день", c:"#00897B", b:"#E0F4F1", sub:"Что сейчас, что потом, когда.", chips:[["СЕЙЧАС","#00897B"],["ПОТОМ","#00897B"]],
+    stages:"1 — два варианта (и подсказки на картинке); 2 — больше вариантов; 3 — вопрос только голосом.",
+    levels:[
+      {name:"Что сейчас?", kind:"now"},
+      {name:"Что потом?", kind:"next"},
+      {name:"Когда? (утром, днем, вечером)", kind:"when"},
+      {name:"Что было до …?", kind:"before"}
+    ]},
+  read:{title:"Читаем", c:"#5D4037", b:"#F5EEE9", sub:"Прочитай и ответь на вопрос.", chips:[["ЧИТАЙ","#5D4037"]],
+    stages:"1 — текст и два ответа; 2 — текст и три ответа; 3 — текст только на слух.",
+    levels:[{name:"Одно предложение", n:1},{name:"Два предложения", n:2},{name:"Три предложения: потом, почему", n:3}]}
 };
-const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?"};
+const TRACK_KEYS = Object.keys(TRACKS);
+const mainType = (tr, L) => tr==="q" ? TRACKS.q.levels[L-1].main : tr;
+const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", form:"Формы слов", say:"Скажи сам", day:"Мой день", read:"Читаем"};
 const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
 
 /* ================= state ================= */
-const DEF = {lvl:{pred:1,q:1}, st:{pred:1,q:1}, resetAt:{pred:0,q:0}, sound:true, rate:0.85, medals:0, log:[]};
+const DEF = {lvl:{}, st:{}, resetAt:{}, sound:true, rate:0.85, medals:0, log:[], day:DAY_ITEMS.map(d=>({id:d.id,on:true}))};
+TRACK_KEYS.forEach(k=>{ DEF.lvl[k]=1; DEF.st[k]=1; DEF.resetAt[k]=0; });
 let S = JSON.parse(JSON.stringify(DEF));
-try{ const raw = localStorage.getItem("alan-cards-v2"); if(raw){ const d=JSON.parse(raw); S=Object.assign(S,d,{lvl:Object.assign({},DEF.lvl,d.lvl||{}), st:Object.assign({},DEF.st,d.st||{}), resetAt:Object.assign({},DEF.resetAt,d.resetAt||{})}); }
-     else { const old = JSON.parse(localStorage.getItem("alan-cards-v1")||"null"); if(old){ S.sound=old.sound!==false; S.rate=old.rate||0.85; S.medals=old.medals||0; } } }catch(e){}
+try{ const raw = localStorage.getItem("alan-cards-v2"); if(raw){ const d=JSON.parse(raw);
+  S=Object.assign(S,d,{lvl:Object.assign({},DEF.lvl,d.lvl||{}), st:Object.assign({},DEF.st,d.st||{}), resetAt:Object.assign({},DEF.resetAt,d.resetAt||{})});
+  if(!Array.isArray(S.day)||!S.day.length) S.day=DEF.day;
+  DAY_ITEMS.forEach(it=>{ if(!S.day.find(x=>x.id===it.id)) S.day.push({id:it.id,on:false}); });
+} }catch(e){}
+TRACK_KEYS.forEach(k=>{ S.lvl[k]=Math.min(Math.max(1,S.lvl[k]|0), TRACKS[k].levels.length); S.st[k]=Math.min(Math.max(1,S.st[k]|0),3); });
 let PHOTOS = [];
 try{ PHOTOS = JSON.parse(localStorage.getItem("alan-cards-photos")||"[]"); if(!Array.isArray(PHOTOS)) PHOTOS=[]; }catch(e){ PHOTOS=[]; }
 function save(){ try{ localStorage.setItem("alan-cards-v2", JSON.stringify(S)); }catch(e){} }
 function savePhotos(){ try{ localStorage.setItem("alan-cards-photos", JSON.stringify(PHOTOS)); return true; }catch(e){ return false; } }
-const run = {streak:{pred:0,q:0}, errs:{pred:0,q:0}, stars:0};
+const run = {streak:{}, errs:{}, stars:0};
+TRACK_KEYS.forEach(k=>{ run.streak[k]=0; run.errs[k]=0; });
 
 /* ================= speech ================= */
 let voice=null;
@@ -344,207 +499,390 @@ function say(t){ if(!t||!S.sound||!("speechSynthesis" in window)) return; try{ s
 
 /* ================= scene ================= */
 const scene=$("scene"), layerBack=$("layerBack"), layerTop=$("layerTop");
-let objEl=null, objPos=[0,0], objScale=1, zones=[];
+let items=[], zones=[];
+function room(on){ $("wallR").style.display=on?"":"none"; $("floorR").style.display=on?"":"none"; }
+function clearScene(){ items.forEach(it=>it.el.remove()); items=[]; zones=[]; ["sBack","sFront","sZones"].forEach(id=>$(id).innerHTML=""); room(true); $("panel").hidden=true; }
 function buildScene(key){
-  zones=[];
-  if(!key){ $("sBack").innerHTML=""; $("sFront").innerHTML=""; $("sZones").innerHTML=""; return; }
+  clearScene(); if(!key) return;
   const ps=PLACES[SCENES[key][0]], pc=PLACES[SCENES[key][1]];
   $("sBack").innerHTML = RUG + ps.back + pc.back;
   $("sFront").innerHTML = ps.front + pc.front;
   [[ps,"na"],[ps,"pod"],[pc,"v"],[pc,"ryadom"]].forEach(([p,k])=>zones.push({key:k, place:p, rect:p.zones[k], pos:p.pos[k]}));
   $("sZones").innerHTML = zones.map(z=>{ const [x1,y1,x2,y2]=z.rect; return `<rect class="zone" id="z-${z.key}" x="${x1+6}" y="${y1+6}" width="${x2-x1-12}" height="${y2-y1-12}" rx="18"/>`; }).join("");
 }
-function showZone(k){ zones.forEach(z=>{ const el=$("z-"+z.key); if(el) el.classList.toggle("show", z.key===k); }); }
+function showZones(keys){ zones.forEach(z=>{ const el=$("z-"+z.key); if(el) el.classList.toggle("show", keys.includes(z.key)); }); }
 function zoneAt(x,y){ return zones.find(z=>{ const [x1,y1,x2,y2]=z.rect; return x>=x1&&x<=x2&&y>=y1&&y<=y2; }) || null; }
-function makeObj(inner, x, y, s, back){
-  if(objEl) objEl.remove();
-  objEl=document.createElementNS(NS,"g"); objEl.setAttribute("class","obj"); objEl.innerHTML=inner;
-  objScale=s||1; setPos(x,y); (back?layerBack:layerTop).appendChild(objEl);
+function addItem(inner, x, y, s, back){
+  const el=document.createElementNS(NS,"g"); el.setAttribute("class","obj"); el.innerHTML=inner;
+  const it={el, pos:[x,y], s:s||1}; setPos(it,x,y); (back?layerBack:layerTop).appendChild(el); items.push(it); return it;
 }
-function setPos(x,y){ objPos=[x,y]; objEl.setAttribute("transform",`translate(${x},${y}) scale(${objScale})`); }
-function tween(to, ms, done){
-  const el=objEl, from=objPos.slice(), t0=performance.now(), reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  (function step(now){ if(objEl!==el) return; const k=reduce?1:Math.min(1,Math.max(0,(now-t0)/ms)), e=1-Math.pow(1-k,3);
-    setPos(from[0]+(to[0]-from[0])*e, from[1]+(to[1]-from[1])*e); if(k<1) requestAnimationFrame(step); else done&&done(); })(t0);
+function setPos(it,x,y){ it.pos=[x,y]; it.el.setAttribute("transform",`translate(${x},${y}) scale(${it.s})`); }
+function tween(it, to, ms, done){
+  const from=it.pos.slice(), t0=performance.now(), reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  (function step(now){ if(!it.el.isConnected) return; const k=reduce?1:Math.min(1,Math.max(0,(now-t0)/ms)), e=1-Math.pow(1-k,3);
+    setPos(it, from[0]+(to[0]-from[0])*e, from[1]+(to[1]-from[1])*e); if(k<1) requestAnimationFrame(step); else done&&done(); })(t0);
 }
 function svgPoint(ev){ const p=scene.createSVGPoint(); p.x=ev.clientX; p.y=ev.clientY; return p.matrixTransform(scene.getScreenCTM().inverse()); }
+/* an actor (character) standing in a zone: bottom of body aligned with an 80px object's bottom */
+function actorAt(sc, pk, inner, s){ const z=zones.find(x=>x.key===pk); const y=z.pos[1]+40-74*s; return addItem(inner, z.pos[0], y, s, pk==="v"); }
+function bigCenter(inner, s){ room(false); return addItem(inner, 500, 300, s||2.6, false); }
+function showPhoto(src){
+  room(false);
+  const el=document.createElementNS(NS,"g");
+  el.innerHTML=`<defs><clipPath id="phclip"><rect x="320" y="60" width="360" height="460" rx="28"/></clipPath></defs><image href="${src}" x="320" y="60" width="360" height="460" preserveAspectRatio="xMidYMid slice" clip-path="url(#phclip)"/><rect x="320" y="60" width="360" height="460" rx="28" fill="none" stroke="#fff" stroke-width="8"/>`;
+  layerTop.appendChild(el); items.push({el, pos:[0,0], s:1});
+}
+function showPanel(html){ $("panel").innerHTML=html; $("panel").hidden=false; }
 
 /* ================= screens ================= */
 let mode=null, cur=null, busy=false, revealed=false, timer=null;
 function later(fn,ms){ clearTimeout(timer); timer=setTimeout(fn,ms); }
-function lvlLabel(tr){ return `Уровень ${S.lvl[tr]}: ${LEVELS[tr][S.lvl[tr]-1].name}`; }
-function renderHome(){ $("pillPred").textContent=lvlLabel("pred"); $("pillQ").textContent=lvlLabel("q"); $("gearDot").hidden = !(readiness("pred").ready||readiness("q").ready); }
+function lvlLabel(tr){ return `Уровень ${S.lvl[tr]}: ${TRACKS[tr].levels[S.lvl[tr]-1].name}`; }
+function chipArt(chips){ let x=10; return chips.map(([t,c])=>{ const w=18+t.length*14; const g=`<rect x="${x}" y="14" width="${w}" height="40" rx="10" fill="${c}"/><text x="${x+w/2}" y="41" text-anchor="middle" class="label" style="font-size:18px">${t}</text>`; x+=w+10; return g; }).join(""); }
+function renderHome(){
+  const h=$("home");
+  h.innerHTML = TRACK_KEYS.map(k=>{ const T=TRACKS[k]; return `<button class="tile" data-go="${k}" style="--tc:${T.c};--tb:${T.b}"><svg class="tile-art" viewBox="0 0 300 64" preserveAspectRatio="xMinYMid meet" aria-hidden="true">${chipArt(T.chips)}</svg><h2>${T.title}</h2><span class="lvl-pill">${esc(lvlLabel(k))}</span><p>${T.sub}</p></button>`; }).join("")
+    + `<button class="tile" data-tanks style="--tc:#3F7D3A;--tb:#EEF6EC"><svg class="tile-art" viewBox="-60 -40 120 80" preserveAspectRatio="xMinYMid meet" aria-hidden="true">${tankSvg("#5E7F4A")}</svg><h2>Мои танки</h2><span class="lvl-pill">Собрано: ${S.medals}</span><p>Танки за каждые 5 правильных ответов.</p></button>`
+    + `<p class="home-note">Для родителей: удерживайте шестеренку, чтобы открыть уровни, распорядок дня, фото семьи и журнал.</p>`;
+  h.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>start(b.dataset.go));
+  h.querySelector("[data-tanks]").onclick=openTanks;
+  $("gearDot").hidden = !TRACK_KEYS.some(k=>readiness(k).ready);
+}
 function renderStars(){ $("stars").innerHTML=Array.from({length:5},(_,i)=>`<span class="${i<run.stars?"on":""}"></span>`).join(""); }
 function goHome(){ clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
-function start(m){ mode=m; cur=null; $("home").hidden=true; $("play").hidden=false; $("backBtn").hidden=false; $("hdrTitle").textContent = m==="pred"?"Куда положить?":"Вопросы"; renderStars(); nextTask(); }
-$("goPred").onclick=()=>start("pred"); $("goQ").onclick=()=>start("q"); $("backBtn").onclick=goHome;
+function start(m){ mode=m; cur=null; $("home").hidden=true; $("play").hidden=false; $("backBtn").hidden=false; $("hdrTitle").textContent=TRACKS[m].title; renderStars(); nextTask(); }
+$("backBtn").onclick=goHome;
 $("speakBtn").onclick=()=>{ if(cur&&cur.speech) say(cur.speech); };
 function setCard(html, state){ $("taskText").innerHTML=html; const t=$("task"); t.classList.remove("ok","err"); if(state) t.classList.add(state); }
 function hiddenCard(){ setCard(`<span class="muted">Слушай</span><button class="reveal" id="revealBtn">Показать текст</button>`); $("revealBtn").onclick=e=>{ e.stopPropagation(); revealed=true; cur.render(); }; }
-function logIt(tr, ty, task, ans, ok){ S.log.push({t:Date.now(), tr, ty, lvl:S.lvl[tr], st:S.st[tr], task, ans, ok}); if(S.log.length>800) S.log=S.log.slice(-800); save(); }
+function logIt(tr, ty, task, ans, ok){ S.log.push({t:Date.now(), tr, ty, lvl:S.lvl[tr], st:S.st[tr], task, ans, ok}); if(S.log.length>1000) S.log=S.log.slice(-1000); save(); }
+function showArea(which){ ["answers","build","judge"].forEach(id=>$(id).hidden = id!==which); }
 
 /* ================= progress ================= */
 function win(tr){ run.errs[tr]=0; run.streak[tr]++; if(run.streak[tr]>=5 && S.st[tr]<3){ S.st[tr]++; run.streak[tr]=0; save(); } run.stars=Math.min(5,run.stars+1); renderStars(); }
 function lose(tr){ run.streak[tr]=0; run.errs[tr]++; if(run.errs[tr]>=2 && S.st[tr]>1){ S.st[tr]--; run.errs[tr]=0; save(); } }
+function neutral(tr){ run.streak[tr]=0; }
 function afterWin(){ if(run.stars>=5){ S.medals++; save(); showReward(); } else nextTask(); }
 function readiness(tr){
-  const L=S.lvl[tr], main = tr==="pred"?"pred":LEVELS.q[L-1].main;
+  const L=S.lvl[tr], main=mainType(tr,L);
   const rows=S.log.filter(l=>l.tr===tr && l.lvl===L && l.st===3 && l.ty===main && l.t>(S.resetAt[tr]||0)).slice(-10);
   const ok=rows.filter(r=>r.ok).length;
-  return {n:rows.length, ok, ready: rows.length===10 && ok>=8 && L<LEVELS[tr].length};
+  return {n:rows.length, ok, ready: rows.length===10 && ok>=8 && L<TRACKS[tr].levels.length};
 }
 function showReward(){
-  $("rewardArt").innerHTML=OBJS.find(o=>o.id==="tank").svg;
-  $("rewardText").textContent=`Новый танк в коллекции. Всего танков: ${S.medals}.`;
+  const [nm,c]=TANKS[(S.medals-1)%TANKS.length];
+  $("rewardArt").innerHTML=tankSvg(c);
+  $("rewardText").textContent=`Новый танк: ${nm}. Всего танков: ${S.medals}.`;
   $("reward").hidden=false; say("Молодец!");
 }
 $("rewardNext").onclick=()=>{ $("reward").hidden=true; run.stars=0; renderStars(); nextTask(); };
+function openTanks(){
+  $("tanksNote").textContent = S.medals ? `Собрано танков: ${S.medals}. Новый танк — за каждые 5 правильных ответов.` : "Пока пусто. Новый танк — за каждые 5 правильных ответов.";
+  $("tgrid").innerHTML = TANKS.map(([nm,c],i)=>{ const n = S.medals>i ? Math.floor((S.medals-1-i)/TANKS.length)+1 : 0;
+    return n ? `<div class="tcard got"><svg viewBox="-60 -40 120 80">${tankSvg(c)}</svg><b>${nm}</b><span>${n>1?"× "+n:"есть"}</span></div>`
+             : `<div class="tcard"><svg viewBox="-60 -40 120 80"><g opacity=".25">${tankSvg("#90A4AE")}</g></svg><b>?</b><span>еще не собран</span></div>`; }).join("");
+  $("tanks").hidden=false;
+}
+$("tanksClose").onclick=()=>{ $("tanks").hidden=true; };
 
-/* ================= tasks ================= */
-function nextTask(repeat){ busy=false; revealed=false; $("need").hidden=true; if(mode==="pred") predTask(repeat); else qTask(repeat); }
-
-/* ---- prepositions ---- */
-function predTask(repeat){
-  $("answers").hidden=true;
-  const L=LEVELS.pred[S.lvl.pred-1];
-  if(!repeat || !cur || cur.kind!=="pred"){
-    let t, guard=0;
-    do{ t={pk:rnd(L.preps), sc:rnd(L.scenes), o:rnd(L.objs)}; guard++; }
-    while(guard<20 && cur && cur.kind==="pred" && cur.pk===t.pk && cur.o===t.o);
-    cur=Object.assign({kind:"pred"},t);
-  }
-  const P=PREPS[cur.pk], pair=SCENES[cur.sc], place=PLACES[P.kind==="surface"?pair[0]:pair[1]];
-  cur.place=place; cur.target = cur.pk==="iz" ? "v" : cur.pk;
-  cur.speech = `${P.verb||"Положи"} ${cur.o.acc} ${P.w} ${P.word(place)}`;
-  cur.render = state=>renderPredCard(state);
-  buildScene(cur.sc);
-  if(cur.pk==="iz") makeObj(cur.o.svg, place.pos.v[0], place.pos.v[1], 1, true);
-  else makeObj(cur.o.svg, START[0], START[1], 1, false);
-  bindDrag(); renderPredCard();
-  showZone(S.st.pred===1 && cur.pk!=="iz" ? cur.pk : null);
-  say(cur.speech);
+/* ================= common question flow ================= */
+function nextTask(repeat){ busy=false; revealed=false; ({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask})[mode](repeat); }
+function present(cfg){ // cfg: {ty, html, speech, right, opts, cls, okSay, errSay, hide, fmt}
+  Object.assign(cur, cfg);
+  const st=S.st[mode];
+  cur.render = state=>{ if(st===3 && cfg.hide!==false && !revealed && !state){ hiddenCard(); return; } setCard(cfg.html, state); };
+  cur.render(); showArea("answers");
+  renderAnswers(shuffle(cfg.opts), cfg.cls, cfg.fmt);
+  say(cfg.speech);
 }
-function renderPredCard(state){
-  const P=PREPS[cur.pk];
-  if(S.st.pred===3 && !revealed && !state){ hiddenCard(); return; }
-  setCard(`<span>${P.verb||"Положи"}</span><span>${cur.o.acc}</span><span class="chip where">${P.w}</span><span>${P.word(cur.place)}</span>`, state);
-}
-function bindDrag(){
-  let off=null; const el=objEl;
-  el.addEventListener("pointerdown", ev=>{ if(busy||mode!=="pred") return; ev.preventDefault();
-    const p=svgPoint(ev); off=[p.x-objPos[0], p.y-objPos[1]]; el.classList.add("drag"); layerTop.appendChild(el);
-    try{ el.setPointerCapture(ev.pointerId); }catch(e){} });
-  el.addEventListener("pointermove", ev=>{ if(!off) return; const p=svgPoint(ev); setPos(Math.max(40,Math.min(960,p.x-off[0])), Math.max(40,Math.min(540,p.y-off[1]))); });
-  const end=()=>{ if(!off) return; off=null; el.classList.remove("drag"); dropped(); };
-  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
-}
-function putAt(z){ tween(z.pos, 250, ()=>{ if(z.key==="v") layerBack.appendChild(objEl); }); }
-function dropped(){
-  const z=zoneAt(objPos[0], objPos[1]), P=PREPS[cur.pk], place=cur.place, task=cur.speech;
-  if(cur.pk==="iz"){
-    if(z && z.key==="v"){ putAt(z); return; }               // put back inside: not an answer yet
-    busy=true; tween(START, 300); renderPredCard("ok");
-    say(P.ans(place)); logIt("pred","pred",task,"ИЗ",true); win("pred"); later(afterWin,1600); return;
-  }
-  if(!z){ tween(START, 300); return; }
-  busy=true;
-  const target=zones.find(x=>x.key===cur.target);
-  if(z.key===cur.target){
-    putAt(z); showZone(null); renderPredCard("ok");
-    say(`${cap(cur.o.nom)} ${P.ans(place)}`);
-    logIt("pred","pred",task,PREPS[z.key].w,true); win("pred"); later(afterWin,1700);
-  } else {
-    tween(z.pos, 200, ()=>{ if(z.key==="v") layerBack.appendChild(objEl);
-      setTimeout(()=>{ layerTop.appendChild(objEl); tween(target.pos, 700, ()=>{ if(target.key==="v") layerBack.appendChild(objEl); }); }, 450); });
-    renderPredCard("err"); showZone(cur.target);
-    say(`${P.w} ${P.word(place)}`);
-    logIt("pred","pred",task,PREPS[z.key].w,false); lose("pred"); later(()=>nextTask(true),2800);
-  }
-}
-
-/* ---- questions ---- */
-function pickType(mix){ const r=Math.random(); let acc=0; for(const k in mix){ acc+=mix[k]; if(r<=acc) return k; } return Object.keys(mix)[0]; }
-function peopleNames(){ return [...new Set(PHOTOS.map(p=>(p.name||"").trim().toLowerCase()).filter(Boolean))]; }
-function canDo(ty){ if(ty==="kto") return peopleNames().length>=2; if(ty==="delaet") return PHOTOS.some(p=>p.act&&p.act.trim()); return true; }
-function qTask(repeat){
-  const L=LEVELS.q[S.lvl.q-1];
-  if(!canDo(L.main)){ showNeed(); return; }
-  if(!repeat || !cur || cur.kind!=="q" || cur.ty==="need"){
-    let ty=pickType(L.mix); if(!canDo(ty)) ty=L.main;
-    cur={kind:"q", ty};
-    if(ty==="chto") cur.o=rnd(OBJS);
-    if(ty==="gde"){ cur.sc=rnd(["A","B"]); cur.pk=rnd(["na","pod","v"]); cur.o=rnd(OBJS); }
-    if(ty==="kto") cur.ph=rnd(PHOTOS.filter(p=>(p.name||"").trim()));
-    if(ty==="delaet") cur.ph=rnd(PHOTOS.filter(p=>p.act&&p.act.trim()));
-  }
-  showZone(null); $("answers").hidden=false;
-  const st=S.st.q, ty=cur.ty;
-  let chip, qtext, right, opts, cls, okSay;
-  if(ty==="chto"){
-    buildScene(null); makeObj(cur.o.svg, 500, 300, 2.6, false);
-    chip='<span class="chip what">ЧТО</span>'; qtext="это?"; cur.speech="Что это?"; cls="what";
-    right=cap(cur.o.nom); opts=[right, ...shuffle(OBJS.filter(o=>o!==cur.o)).slice(0, st===1?1:3).map(o=>cap(o.nom))];
-    okSay=`Это ${cur.o.nom}`;
-  } else if(ty==="gde"){
-    buildScene(cur.sc); const pair=SCENES[cur.sc], P=PREPS[cur.pk];
-    const placeOf=k=>PLACES[PREPS[k].kind==="surface"?pair[0]:pair[1]];
-    const z=zones.find(x=>x.key===cur.pk);
-    makeObj(cur.o.svg, z.pos[0], z.pos[1], 1, cur.pk==="v");
-    chip='<span class="chip where">ГДЕ</span>'; qtext=`${cur.o.nom}?`; cur.speech=`Где ${cur.o.nom}?`; cls="where";
-    right=P.ans(placeOf(cur.pk));
-    const others=["na","pod","v"].filter(k=>k!==cur.pk).map(k=>PREPS[k].ans(placeOf(k)));
-    opts=[right, ...shuffle(others).slice(0, st===1?1:2)]; okSay=`${cap(cur.o.nom)} ${right}`;
-  } else if(ty==="kto"){
-    buildScene(null); showPhoto(cur.ph.img);
-    chip='<span class="chip who">КТО</span>'; qtext="это?"; cur.speech="Кто это?"; cls="who";
-    const nm=cur.ph.name.trim().toLowerCase(); right=cap(nm);
-    opts=[right, ...shuffle(peopleNames().filter(n=>n!==nm)).slice(0, st===1?1:3).map(cap)]; okSay=`Это ${nm}`;
-  } else {
-    buildScene(null); showPhoto(cur.ph.img);
-    const who=(cur.ph.name||"").trim().toLowerCase()||"он";
-    chip='<span class="chip does">ЧТО ДЕЛАЕТ</span>'; qtext=`${who}?`; cur.speech=`Что делает ${who}?`; cls="does";
-    right=cur.ph.act.trim().toLowerCase();
-    const pool=[...new Set([...PHOTOS.map(p=>(p.act||"").trim().toLowerCase()).filter(Boolean), ...VERBS])].filter(v=>v!==right);
-    opts=[right, ...shuffle(pool).slice(0, st===1?1:2)]; okSay=`${cap(who)} ${right}`;
-  }
-  cur.right=right; cur.okSay=okSay;
-  cur.render = state=>{ if(st===3 && !revealed && !state){ hiddenCard(); return; } setCard(`${chip}<span>${esc(qtext)}</span>`, state); };
-  cur.render();
-  renderAnswers(shuffle(opts), cls);
-  say(cur.speech);
-}
-function showPhoto(src){
-  if(objEl) objEl.remove();
-  objEl=document.createElementNS(NS,"g");
-  objEl.innerHTML=`<defs><clipPath id="phclip"><rect x="320" y="60" width="360" height="460" rx="28"/></clipPath></defs><image href="${src}" x="320" y="60" width="360" height="460" preserveAspectRatio="xMidYMid slice" clip-path="url(#phclip)"/><rect x="320" y="60" width="360" height="460" rx="28" fill="none" stroke="#fff" stroke-width="8"/>`;
-  layerTop.appendChild(objEl);
-}
-function showNeed(){
-  buildScene(null); if(objEl){ objEl.remove(); objEl=null; } $("answers").hidden=true;
-  cur={kind:"q", ty:"need", speech:""};
-  setCard('<span class="muted">Нужны фото</span>');
-  $("need").textContent="Попроси маму или папу добавить фото семьи. Для этого уровня нужны фото людей с именами.";
-  $("need").hidden=false;
-}
-function renderAnswers(opts, cls){
+function renderAnswers(opts, cls, fmt){
   const box=$("answers"); box.innerHTML="";
-  const ty=cur.ty, label=`${cur.speech} (${cur.right})`;
+  const tr=mode, label=`${cur.label||cur.speech} → ${cur.right}`;
   opts.forEach(text=>{
-    const b=document.createElement("button"); b.className="ans "+cls; b.textContent=text;
+    const b=document.createElement("button"); b.className="ans "+cls; b.innerHTML=fmt?fmt(text):esc(text); b.dataset.v=text;
     b.onclick=()=>{
       if(busy) return; busy=true;
       if(text===cur.right){
-        b.classList.add("right"); $("task").classList.add("ok"); say(cur.okSay);
-        logIt("q", ty, label, text, true); win("q"); later(afterWin,1600);
+        b.classList.add("right"); cur.render("ok"); if(cur.onRight) cur.onRight(); say(cur.okSay);
+        logIt(tr, cur.ty, label, text, true); win(tr); later(afterWin,1700);
       } else {
-        b.classList.add("wrong"); $("task").classList.add("err");
-        [...box.children].forEach(x=>{ if(x.textContent===cur.right) x.classList.add("hint"); });
-        say(ty==="gde"||ty==="delaet" ? cur.right : cur.okSay);
-        logIt("q", ty, label, text, false); lose("q"); later(()=>nextTask(true),2600);
+        b.classList.add("wrong"); cur.render("err");
+        [...box.children].forEach(x=>{ if(x.dataset.v===cur.right) x.classList.add("hint"); });
+        say(cur.errSay||cur.okSay);
+        logIt(tr, cur.ty, label, text, false); lose(tr); later(()=>nextTask(true),2700);
       }
     };
     box.appendChild(b);
   });
+}
+const nOpts = (st, a, b, c) => st===1?a:(st===2?b:c);
+
+/* ================= 1. prepositions (drag) ================= */
+function predTask(repeat){
+  const L=TRACKS.pred.levels[S.lvl.pred-1], st=S.st.pred;
+  if(!repeat || !cur || cur.kind!=="pred"){
+    const sc=rnd(L.scenes);
+    if(L.two){
+      const [p1,p2]=shuffle(L.preps).slice(0,2), [o1,o2]=shuffle(L.objs).slice(0,2);
+      cur={kind:"pred", sc, steps:[{pk:p1,o:o1},{pk:p2,o:o2}]};
+    } else {
+      let t, g=0; do{ t={pk:rnd(L.preps), o:rnd(L.objs)}; g++; } while(g<20 && cur && cur.kind==="pred" && cur.steps.length===1 && cur.steps[0].pk===t.pk && cur.steps[0].o===t.o);
+      cur={kind:"pred", sc, steps:[t]};
+    }
+  }
+  cur.ty="pred"; cur.mistake=false;
+  buildScene(cur.sc); showArea(null);
+  const starts = cur.steps.length===2 ? START2 : START1;
+  cur.steps.forEach((s,i)=>{
+    const P=PREPS[s.pk]; s.place=placeFor(cur.sc,s.pk); s.target = s.pk==="iz"?"v":s.pk; s.done=false; s.start=starts[i];
+    s.phrase=`${s.o.acc} ${P.w} ${P.word(s.place)}`;
+    s.item = s.pk==="iz" ? addItem(s.o.svg, s.place.pos.v[0], s.place.pos.v[1], 1, true) : addItem(s.o.svg, s.start[0], s.start[1], 1, false);
+    if(s.pk==="iz") s.start=START1[0];
+    bindDrag(s);
+  });
+  const verb = PREPS[cur.steps[0].pk].verb||"Положи";
+  cur.speech = cur.steps.length===2 ? `Положи ${cur.steps[0].phrase}, а ${cur.steps[1].phrase}` : `${verb} ${cur.steps[0].phrase}`;
+  cur.render = state=>{
+    if(st===3 && !revealed && !state){ hiddenCard(); return; }
+    const part = (s,tail)=>{ const P=PREPS[s.pk]; return `<span>${s.o.acc}</span><span class="chip where">${P.w}</span><span>${P.word(s.place)}${tail||""}</span>`; };
+    setCard(cur.steps.length===2 ? `<span>Положи</span>${part(cur.steps[0],",")}<span>а</span>${part(cur.steps[1])}` : `<span>${verb}</span>${part(cur.steps[0])}`, state);
+  };
+  cur.render();
+  showZones(st===1 ? cur.steps.filter(s=>s.pk!=="iz").map(s=>s.target) : []);
+  say(cur.speech);
+}
+function bindDrag(s){
+  let off=null; const it=s.item, el=it.el;
+  el.addEventListener("pointerdown", ev=>{ if(busy||s.done||mode!=="pred") return; ev.preventDefault();
+    const p=svgPoint(ev); off=[p.x-it.pos[0], p.y-it.pos[1]]; el.classList.add("drag"); layerTop.appendChild(el);
+    try{ el.setPointerCapture(ev.pointerId); }catch(e){} });
+  el.addEventListener("pointermove", ev=>{ if(!off) return; const p=svgPoint(ev); setPos(it, Math.max(40,Math.min(960,p.x-off[0])), Math.max(40,Math.min(540,p.y-off[1]))); });
+  const end=()=>{ if(!off) return; off=null; el.classList.remove("drag"); dropped(s); };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+}
+function putAt(it, z){ tween(it, z.pos, 250, ()=>{ if(z.key==="v") layerBack.appendChild(it.el); }); }
+function dropped(s){
+  const it=s.item, z=zoneAt(it.pos[0], it.pos[1]), P=PREPS[s.pk];
+  const finish=()=>{ if(cur.steps.every(x=>x.done)){ busy=true; showZones([]); cur.render("ok"); logIt("pred","pred",cur.speech,"верно",true); win("pred"); later(afterWin,1800); } };
+  if(s.pk==="iz"){
+    if(z && z.key==="v"){ putAt(it,z); return; }
+    s.done=true; tween(it, START1[0], 300); say(P.ans(s.place)); finish(); return;
+  }
+  if(!z){ tween(it, s.start, 300); return; }
+  if(z.key===s.target){
+    s.done=true; putAt(it,z); say(`${cap(s.o.nom)} ${P.ans(s.place)}`); finish();
+  } else {
+    busy=true; const target=zones.find(x=>x.key===s.target);
+    tween(it, z.pos, 200, ()=>{ setTimeout(()=>{ layerTop.appendChild(it.el); tween(it, target.pos, 700, ()=>{ if(target.key==="v") layerBack.appendChild(it.el); }); }, 450); });
+    cur.render("err"); showZones([s.target]); say(`${P.w} ${P.word(s.place)}`);
+    logIt("pred","pred",cur.speech,`${s.o.acc}: ${PREPS[z.key].w}`,false); lose("pred"); later(()=>nextTask(true),2900);
+  }
+}
+
+/* ================= 2. questions ================= */
+function pickType(mix){ const r=Math.random(); let acc=0; for(const k in mix){ acc+=mix[k]; if(r<=acc) return k; } return Object.keys(mix)[0]; }
+function peopleNames(){ return uniq(PHOTOS.map(p=>(p.name||"").trim().toLowerCase()).filter(Boolean)); }
+function canDo(ty){ if(ty==="kto") return peopleNames().length>=2; if(ty==="delaet") return PHOTOS.some(p=>p.act&&p.act.trim()); return true; }
+function needPhotos(){
+  clearScene(); showArea(null); cur={kind:"need", speech:""};
+  setCard('<span class="muted">Нужны фото</span>');
+  showPanel('<p class="need">Попроси маму или папу добавить фото семьи. Для этого уровня нужны фото людей с именами.</p>');
+}
+function qTask(repeat){
+  const L=TRACKS.q.levels[S.lvl.q-1], st=S.st.q;
+  if(!canDo(L.main)){ needPhotos(); return; }
+  if(!repeat || !cur || cur.kind!=="q"){
+    let ty=pickType(L.mix); if(!canDo(ty)) ty=L.main;
+    cur={kind:"q", ty};
+    if(ty==="chto") cur.o=rnd(SCENE_OBJS);
+    if(ty==="gde"){ cur.sc=rnd(["A","B"]); cur.pk=rnd(["na","pod","v"]); cur.o=rnd(SCENE_OBJS); }
+    if(ty==="kto") cur.ph=rnd(PHOTOS.filter(p=>(p.name||"").trim()));
+    if(ty==="delaet") cur.ph=rnd(PHOTOS.filter(p=>p.act&&p.act.trim()));
+  }
+  const ty=cur.ty;
+  if(ty==="chto"){
+    clearScene(); bigCenter(cur.o.svg);
+    const right=cap(cur.o.nom);
+    present({html:'<span class="chip what">ЧТО</span><span>это?</span>', speech:"Что это?", right, cls:"what", okSay:`Это ${cur.o.nom}`,
+      opts:[right, ...shuffle(SCENE_OBJS.filter(o=>o!==cur.o)).slice(0, nOpts(st,1,3,3)).map(o=>cap(o.nom))]});
+  } else if(ty==="gde"){
+    buildScene(cur.sc); const z=zones.find(x=>x.key===cur.pk); addItem(cur.o.svg, z.pos[0], z.pos[1], 1, cur.pk==="v");
+    const right=PREPS[cur.pk].ans(placeFor(cur.sc,cur.pk));
+    const others=["na","pod","v"].filter(k=>k!==cur.pk).map(k=>PREPS[k].ans(placeFor(cur.sc,k)));
+    present({html:`<span class="chip where">ГДЕ</span><span>${cur.o.nom}?</span>`, speech:`Где ${cur.o.nom}?`, right, cls:"where", okSay:`${cap(cur.o.nom)} ${right}`, errSay:right,
+      opts:[right, ...shuffle(others).slice(0, nOpts(st,1,2,2))]});
+  } else if(ty==="kto"){
+    clearScene(); showPhoto(cur.ph.img);
+    const nm=cur.ph.name.trim().toLowerCase(), right=cap(nm);
+    present({html:'<span class="chip who">КТО</span><span>это?</span>', speech:"Кто это?", right, cls:"who", okSay:`Это ${nm}`,
+      opts:[right, ...shuffle(peopleNames().filter(n=>n!==nm)).slice(0, nOpts(st,1,3,3)).map(cap)]});
+  } else {
+    clearScene(); showPhoto(cur.ph.img);
+    const who=(cur.ph.name||"").trim().toLowerCase()||"он", right=cur.ph.act.trim().toLowerCase();
+    const pool=uniq([...PHOTOS.map(p=>(p.act||"").trim().toLowerCase()).filter(Boolean), ...VERBS]).filter(v=>v!==right);
+    present({html:`<span class="chip does">ЧТО ДЕЛАЕТ</span><span>${esc(who)}?</span>`, speech:`Что делает ${who}?`, right, cls:"does", okSay:`${cap(who)} ${right}`, errSay:right,
+      opts:[right, ...shuffle(pool).slice(0, nOpts(st,1,2,2))]});
+  }
+}
+
+/* ================= shared: random "who does what" scene ================= */
+const INTRANS = ["spit","sidit","begaet","est","pyet","chitaet"], TRANS = ["est","pyet","chitaet","kataet"], STILL = ["spit","sidit"];
+function makeActScene(roles){
+  const ch=rnd(CHARS), withObj=roles.includes("chto"), withGde=roles.includes("gde");
+  const act = withObj ? rnd(TRANS) : (withGde ? rnd(STILL) : rnd(INTRANS));
+  const A=ACTS[act], o = A.objs ? OBJ(rnd(A.objs)) : null;
+  const t={ch, act, o, withObj};
+  if(withGde){ t.sc=rnd(["A","B"]); t.pk=rnd(["na","pod","v"]); }
+  t.words={kto:cap(ch.nom), delaet:A.v, chto: withObj&&o ? o.acc : null, gde: withGde ? gdePhrase(t.sc,t.pk) : null};
+  return t;
+}
+function drawActScene(t){
+  const inner=actorSvg(t.ch, t.act, t.o?t.o.id:null);
+  if(t.sc){ buildScene(t.sc); actorAt(t.sc, t.pk, inner, t.pk==="pod"?.62:.75); }
+  else { clearScene(); bigCenter(inner, 1.7); }
+}
+function distract(role, t){
+  if(role==="kto") return CHARS.filter(c=>c!==t.ch).map(c=>cap(c.nom));
+  if(role==="delaet") return uniq(Object.values(ACTS).map(a=>a.v)).filter(v=>v!==t.words.delaet);
+  if(role==="chto") return uniq(OBJS.map(o=>o.acc)).filter(v=>v!==t.words.chto);
+  if(role==="gde") return ["na","pod","v"].filter(k=>k!==t.pk).map(k=>gdePhrase(t.sc,k));
+  return [];
+}
+const ROLE = {kto:{n:"КТО", c:"r-who"}, delaet:{n:"ЧТО ДЕЛАЕТ", c:"r-does"}, chto:{n:"ЧТО", c:"r-what"}, gde:{n:"ГДЕ", c:"r-where"}};
+
+/* ================= 3. sentence builder ================= */
+function sentTask(repeat){
+  const L=TRACKS.sent.levels[S.lvl.sent-1], st=S.st.sent;
+  if(!repeat || !cur || cur.kind!=="sent"){ cur={kind:"sent", ty:"sent", t:makeActScene(L.roles)}; }
+  const t=cur.t; cur.roles=L.roles; cur.filled=0; cur.mistake=false;
+  drawActScene(t);
+  cur.sentence = L.roles.map(r=>t.words[r]).join(" ");
+  cur.speech = "Составь предложение";
+  cur.render = state=>setCard(`<span class="chip small" style="background:var(--muted)">СОБЕРИ</span>`+L.roles.map(r=>`<span class="chip small ${({kto:"who",delaet:"does",chto:"what",gde:"where"})[r]}">${ROLE[r].n}</span>`).join(""), state);
+  cur.render(); showArea("build");
+  $("slots").innerHTML = L.roles.map((r,i)=>`<div class="slot ${ROLE[r].c} ${i===0&&st<3?"next":""}" data-i="${i}"><small>${ROLE[r].n}</small>&nbsp;</div>`).join("");
+  const extra = st===1?0:(st===2?1:2);
+  let cards=[]; L.roles.forEach(r=>{ cards.push({r, w:t.words[r], ok:true}); shuffle(distract(r,t)).slice(0,extra).forEach(w=>cards.push({r, w, ok:false})); });
+  const bank=$("bank"); bank.innerHTML="";
+  shuffle(cards).forEach(cd=>{
+    const b=document.createElement("button"); b.className=`wcard ${ROLE[cd.r].c}`; b.textContent=cd.w;
+    b.onclick=()=>{
+      if(busy) return; const need=L.roles[cur.filled];
+      if(cd.r===need && cd.w===t.words[need]){
+        const slot=$("slots").children[cur.filled]; slot.innerHTML=`<small>${ROLE[need].n}</small>${esc(cd.w)}`; slot.classList.add("filled"); slot.classList.remove("next");
+        b.remove(); cur.filled++;
+        if(cur.filled<L.roles.length){ if(st<3) $("slots").children[cur.filled].classList.add("next"); say(cd.w); }
+        else { busy=true; cur.render("ok"); say(cur.sentence); logIt("sent","sent",cur.sentence, cur.mistake?"с ошибками":"верно", !cur.mistake);
+          if(cur.mistake){ lose("sent"); later(()=>nextTask(false),2600); } else { win("sent"); later(afterWin,2200); } }
+      } else {
+        cur.mistake=true; b.classList.remove("wrong"); void b.offsetWidth; b.classList.add("wrong");
+        [...bank.children].forEach(x=>{ x.classList.toggle("hint", x.textContent===t.words[need] && x.className.includes(ROLE[need].c)); });
+        say(t.words[need]);
+      }
+    };
+    bank.appendChild(b);
+  });
+  say(cur.speech);
+}
+
+/* ================= 4. word forms (cases) ================= */
+const FRAMES = {
+  dai:{lead:"Дай", form:"acc", pool:()=>OBJS.filter(o=>o.acc!==o.nom)},
+  net:{lead:"Нет", form:"gen", pool:()=>OBJS},
+  igr:{lead:"Играю с", form:"ins", pool:()=>OBJS.filter(o=>o.toy)}
+};
+function endingFmt(opts){ let p=opts[0]; opts.forEach(o=>{ let i=0; while(i<p.length&&i<o.length&&p[i]===o[i]) i++; p=p.slice(0,i); }); return v=>esc(v.slice(0,p.length))+"<b>"+esc(v.slice(p.length))+"</b>"; }
+function formTask(repeat){
+  const L=TRACKS.form.levels[S.lvl.form-1], st=S.st.form;
+  if(!repeat || !cur || cur.kind!=="form"){ const f=rnd(L.frames); cur={kind:"form", f, o:rnd(FRAMES[f].pool())}; }
+  const F=FRAMES[cur.f], o=cur.o, right=o[F.form];
+  clearScene();
+  const it=bigCenter(o.svg, 2.4);
+  if(cur.f==="net"){ it.el.setAttribute("opacity",".45"); const x=document.createElementNS(NS,"g"); x.innerHTML='<path d="M380,180 L620,420 M620,180 L380,420" stroke="#F06A1D" stroke-width="22" stroke-linecap="round"/>'; layerTop.appendChild(x); items.push({el:x,pos:[0,0],s:1}); }
+  const others = uniq(["nom","acc","gen","ins"].map(k=>o[k])).filter(v=>v!==right);
+  const wrong = st===1 ? [o.nom!==right?o.nom:others[0]] : shuffle(others).slice(0,2);
+  const opts=uniq([right, ...wrong]);
+  const phrase=`${F.lead} ${right}`;
+  present({ty:"form", label:`${F.lead} … (${o.nom})`, html:`<span>${F.lead}</span><span class="blank">?</span>`, speech:F.lead, right, cls:"plain", okSay:phrase, opts, fmt:endingFmt(opts),
+    onRight:()=>setCard(`<span>${F.lead}</span><span class="blank">${esc(right)}</span>`,"ok")});
+  const r0=cur.render; cur.render=state=>{ if(state==="ok"){ setCard(`<span>${F.lead}</span><span class="blank">${esc(right)}</span>`,"ok"); return; } r0(state); };
+}
+
+/* ================= 5. say it yourself ================= */
+function sayTask(){
+  const L=TRACKS.say.levels[S.lvl.say-1], st=S.st.say; let answer, q;
+  cur={kind:"say", ty:"say"};
+  if(L.kind==="name"){ const o=rnd(SCENE_OBJS); clearScene(); bigCenter(o.svg); answer=cap(o.nom); q="Что это?"; }
+  else if(L.kind==="where"){ const sc=rnd(["A","B"]), pk=rnd(["na","pod","v"]), o=rnd(SCENE_OBJS); buildScene(sc); const z=zones.find(x=>x.key===pk); addItem(o.svg, z.pos[0], z.pos[1], 1, pk==="v"); answer=cap(gdePhrase(sc,pk)); q=`Где ${o.nom}?`; }
+  else { const roles = L.kind==="act" ? ["kto","delaet"] : (Math.random()<.5?["kto","delaet","chto"]:["kto","delaet","chto","gde"]);
+    const t=makeActScene(roles); drawActScene(t); answer=roles.map(r=>t.words[r]).join(" "); q = L.kind==="act" ? `Что делает ${t.ch.nom}?` : "Расскажи, что на картинке"; }
+  cur.speech=q; cur.answer=answer;
+  cur.render=state=>setCard(`<span class="chip" style="background:#7E57C2">СКАЖИ</span><span>${esc(q)}</span>`, state);
+  cur.render(); showArea("judge");
+  const shown = st===1 ? answer : (st===2 ? answer.split(" ")[0]+" …" : "");
+  $("judge").innerHTML=`<div class="model ${shown?"":"empty"}" id="model">${shown?esc(shown):"Ответ скрыт. Нажмите «Подсказка», если нужно."}</div>
+    <div class="jrow"><button class="jbtn hintb" id="jHint">Подсказка</button><button class="jbtn self" id="jSelf">Сказал сам</button><button class="jbtn help" id="jHelp">С подсказкой</button><button class="jbtn" id="jNo">Не сказал</button></div>`;
+  $("jHint").onclick=()=>{ $("model").textContent=answer; $("model").classList.remove("empty"); say(answer); };
+  const done=(kind)=>{ if(busy) return; busy=true; $("model").textContent=answer; $("model").classList.remove("empty");
+    const ok=kind==="self"; cur.render(ok?"ok":(kind==="no"?"err":null)); say(answer);
+    logIt("say","say",`${q} → ${answer}`, ({self:"сам",help:"с подсказкой",no:"не сказал"})[kind], ok);
+    if(ok){ win("say"); later(afterWin,2000); } else { if(kind==="no") lose("say"); else neutral("say"); later(()=>nextTask(),2200); } };
+  $("jSelf").onclick=()=>done("self"); $("jHelp").onclick=()=>done("help"); $("jNo").onclick=()=>done("no");
+  say(q);
+}
+
+/* ================= 6. my day ================= */
+function dayList(){ const l=S.day.filter(d=>d.on).map(d=>DAY(d.id)).filter(Boolean); return l.length>=3?l:DAY_ITEMS; }
+function drawDay(list, ptr, opts){
+  clearScene(); room(false);
+  const n=list.length, gap=10, w=Math.min(118,(960-gap*(n-1))/n), x0=500-(n*w+(n-1)*gap)/2;
+  let g="";
+  if(opts.bands){ const cols={"утром":"#FFF3C4","днем":"#D6F0FF","вечером":"#E3DCF7"};
+    ["утром","днем","вечером"].forEach(tm=>{ const idx=list.map((d,i)=>d.time===tm?i:-1).filter(i=>i>=0); if(!idx.length) return;
+      const a=x0+idx[0]*(w+gap)-5, b=x0+idx[idx.length-1]*(w+gap)+w+5;
+      g+=`<rect x="${a}" y="150" width="${b-a}" height="300" rx="16" fill="${cols[tm]}"/><text x="${(a+b)/2}" y="178" text-anchor="middle" class="dlabel" style="font-size:20px">${cap(tm)}</text>`; }); }
+  list.forEach((d,i)=>{ const x=x0+i*(w+gap), hl=i===ptr, sc=Math.min(1,w/96);
+    g+=`<rect x="${x}" y="200" width="${w}" height="${200}" rx="14" fill="#fff" stroke="${hl?"#00897B":"#B9D6EC"}" stroke-width="${hl?7:3}"/>`
+     + `<g transform="translate(${x+w/2},${282}) scale(${sc})">${d.icon}</g>`
+     + (opts.hideLabel===i ? `<text x="${x+w/2}" y="${378}" text-anchor="middle" class="dlabel" style="font-size:${Math.min(21,w/5.2)}px">?</text>` : `<text x="${x+w/2}" y="${378}" text-anchor="middle" class="dlabel" style="font-size:${Math.min(21,w/5.2)}px">${cap(d.name)}</text>`); });
+  if(ptr!=null){ const x=x0+ptr*(w+gap)+w/2; g+=`<path d="M${x-16},${120} L${x+16},${120} L${x},${146}Z" fill="#00897B"/><text x="${x}" y="${108}" text-anchor="middle" class="dlabel" style="fill:#00897B">${opts.ptrLabel||"СЕЙЧАС"}</text>`; }
+  $("sBack").innerHTML=g;
+}
+function dayTask(repeat){
+  const L=TRACKS.day.levels[S.lvl.day-1], st=S.st.day, list=dayList(), n=list.length;
+  if(!repeat || !cur || cur.kind!=="day"){
+    let i; if(L.kind==="next") i=Math.floor(Math.random()*(n-1)); else if(L.kind==="before") i=1+Math.floor(Math.random()*(n-1)); else i=Math.floor(Math.random()*n);
+    cur={kind:"day", i};
+  }
+  const i=Math.min(cur.i,n-1), d=list[i], names=list.map(x=>cap(x.name));
+  const pickOther=(right,k)=>shuffle(names.filter(x=>x!==right)).slice(0,k);
+  if(L.kind==="now"){
+    drawDay(list, i, {hideLabel:st>=2?i:null}); const right=cap(d.name);
+    present({ty:"day", html:'<span class="chip" style="background:#00897B">ЧТО</span><span>сейчас?</span>', speech:"Что сейчас?", right, cls:"plain", okSay:`Сейчас ${d.name}`, opts:[right,...pickOther(right,nOpts(st,1,2,3))]});
+  } else if(L.kind==="next"){
+    const nx=list[i+1]; drawDay(list, i, {hideLabel:i+1}); const right=cap(nx.name);
+    present({ty:"day", html:`<span>Сейчас ${esc(d.name)}.</span><span class="chip" style="background:#00897B">ЧТО</span><span>потом?</span>`, speech:`Сейчас ${d.name}. Что потом?`, right, cls:"plain", okSay:`Потом ${nx.name}`, opts:[right,...pickOther(right,nOpts(st,1,2,3))]});
+  } else if(L.kind==="when"){
+    drawDay(list, i, {bands:st===1, ptrLabel:" "}); const right=cap(d.time);
+    const all=["Утром","Днем","Вечером"];
+    present({ty:"day", html:`<span class="chip" style="background:#00897B">КОГДА</span><span>${esc(d.name)}?</span>`, speech:`Когда ${d.name}?`, right, cls:"plain", okSay:`${cap(d.name)} ${d.time}`, errSay:right,
+      opts:[right,...shuffle(all.filter(x=>x!==right)).slice(0,nOpts(st,1,2,2))]});
+  } else {
+    const pv=list[i-1]; drawDay(list, i, {hideLabel:i-1, ptrLabel:cap(d.name).toUpperCase()}); const right=cap(pv.name);
+    present({ty:"day", html:`<span class="chip" style="background:#00897B">ЧТО</span><span>было до ${esc(d.gen)}?</span>`, speech:`Что было до ${d.gen}?`, right, cls:"plain", okSay:`До ${d.gen} ${pv.name}`, opts:[right,...pickOther(right,nOpts(st,1,2,3))]});
+  }
+}
+
+/* ================= 7. reading ================= */
+function readTask(repeat){
+  const L=TRACKS.read.levels[S.lvl.read-1], st=S.st.read;
+  if(!repeat || !cur || cur.kind!=="read"){ const pool=STORIES.filter(s=>s.lvl===L.n); let s, g=0; do{ s=rnd(pool); g++; }while(g<10 && cur && cur.story===s); cur={kind:"read", story:s}; }
+  const s=cur.story; clearScene();
+  const showText = st<3 || revealed;
+  showPanel(showText ? `<p class="story">${esc(s.text)}</p>` : `<div style="display:grid;gap:14px;justify-items:center"><p class="need">Слушай рассказ.</p><button class="reveal" id="showStory">Показать текст</button></div>`);
+  if(!showText) $("showStory").onclick=()=>{ revealed=true; showPanel(`<p class="story">${esc(s.text)}</p>`); };
+  const opts=[s.a, ...s.w.slice(0, nOpts(st,1,2,2))];
+  present({ty:"read", label:s.q, html:`<span>${esc(s.q)}</span>`, speech:`${s.text} ${s.q}`, right:s.a, cls:"plain", okSay:s.a, opts, hide:false});
 }
 
 /* ================= parent area ================= */
@@ -554,13 +892,16 @@ gear.addEventListener("pointerdown", e=>{ e.preventDefault(); gear.classList.add
 gear.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" ") openParent(); });
 $("parentClose").onclick=()=>{ $("parent").hidden=true; if(mode){ cur=null; nextTask(); } else renderHome(); };
 function openParent(){ clearTimeout(timer); try{speechSynthesis.cancel();}catch(e){} renderParent(); $("parent").hidden=false; }
-function seg(el, items, isOn, onTap){ el.innerHTML=""; items.forEach(it=>{ const b=document.createElement("button"); b.textContent=it.label; if(isOn(it.v)) b.classList.add("on"); b.onclick=()=>{ onTap(it.v); save(); renderParent(); }; el.appendChild(b); }); }
+function seg(el, list, isOn, onTap){ el.innerHTML=""; list.forEach(it=>{ const b=document.createElement("button"); b.textContent=it.label; if(isOn(it.v)) b.classList.add("on"); b.onclick=()=>{ onTap(it.v); save(); renderParent(); }; el.appendChild(b); }); }
+const openTracks=new Set();
 function setLevel(tr, v){ S.lvl[tr]=v; S.st[tr]=1; S.resetAt[tr]=Date.now(); run.streak[tr]=0; run.errs[tr]=0; }
-function renderTrack(tr){
-  const box=$(tr==="pred"?"trackPred":"trackQ"), title = tr==="pred"?"Куда положить? (предлоги)":"Вопросы";
-  const r=readiness(tr), L=S.lvl[tr], max=LEVELS[tr].length;
-  box.innerHTML=`<h3>${title}</h3>
-    <ol class="levels">${LEVELS[tr].map((l,i)=>`<li class="${i+1===L?"cur":""}">${esc(l.name)}</li>`).join("")}</ol>
+function renderTrack(tr, box){
+  const T=TRACKS[tr], r=readiness(tr), L=S.lvl[tr], max=T.levels.length;
+  const d=document.createElement("details"); d.className="pbox"; d.dataset.tr=tr; if(r.ready || openTracks.has(tr)) d.open=true;
+  d.addEventListener("toggle", ()=>{ if(d.open) openTracks.add(tr); else openTracks.delete(tr); });
+  d.innerHTML=`<summary>${T.title} — уровень ${L}, ступень ${S.st[tr]}${r.ready?" · готов к следующему":""}</summary>
+    <ol class="levels">${T.levels.map((l,i)=>`<li class="${i+1===L?"cur":""}">${esc(l.name)}</li>`).join("")}</ol>
+    <p class="hint-txt">Ступени: ${T.stages}</p>
     <div class="row"><span class="lbl">Уровень</span><span class="seg" data-k="lvl"></span></div>
     <div class="row"><span class="lbl">Ступень подсказок</span><span class="seg" data-k="st"></span></div>
     <div class="ready ${r.ready?"go":""}">${
@@ -568,19 +909,30 @@ function renderTrack(tr){
       r.ready ? `<span>Готов к уровню ${L+1}: на ступени 3 верно <b>${r.ok} из 10</b>.</span><button class="primary" data-up>Перейти на уровень ${L+1}</button>` :
       `<span>До уровня ${L+1}: на ступени 3 верно <b>${r.ok} из ${r.n}</b> последних (нужно 8 из 10).</span>`}</div>
     <div class="row" data-reset><button class="ghost">Начать уровень ${L} заново</button><span class="hint-txt">Подсказки вернутся на ступень 1, счетчик готовности обнулится. Журнал сохранится.</span></div>`;
-  seg(box.querySelector('[data-k="lvl"]'), LEVELS[tr].map((_,i)=>({label:String(i+1),v:i+1})), v=>S.lvl[tr]===v, v=>setLevel(tr,v));
-  seg(box.querySelector('[data-k="st"]'), [1,2,3].map(v=>({label:String(v),v})), v=>S.st[tr]===v, v=>{ S.st[tr]=v; run.streak[tr]=0; run.errs[tr]=0; });
-  const up=box.querySelector("[data-up]"); if(up) up.onclick=()=>{ setLevel(tr, L+1); save(); renderParent(); };
-  const rs=box.querySelector("[data-reset]");
+  box.appendChild(d);
+  seg(d.querySelector('[data-k="lvl"]'), T.levels.map((_,i)=>({label:String(i+1),v:i+1})), v=>S.lvl[tr]===v, v=>setLevel(tr,v));
+  seg(d.querySelector('[data-k="st"]'), [1,2,3].map(v=>({label:String(v),v})), v=>S.st[tr]===v, v=>{ S.st[tr]=v; run.streak[tr]=0; run.errs[tr]=0; });
+  const up=d.querySelector("[data-up]"); if(up) up.onclick=()=>{ setLevel(tr, L+1); save(); renderParent(); };
+  const rs=d.querySelector("[data-reset]");
   rs.querySelector("button").onclick=()=>{
     rs.innerHTML=`<span>Начать уровень ${L} заново?</span><button class="primary" data-yes>Да, заново</button><button class="ghost" data-no>Нет</button>`;
     rs.querySelector("[data-yes]").onclick=()=>{ setLevel(tr, L); save(); renderParent(); };
     rs.querySelector("[data-no]").onclick=renderParent;
   };
 }
+function renderDayEd(){
+  const box=$("dayEd"); box.innerHTML="";
+  S.day.forEach((d,i)=>{ const it=DAY(d.id); if(!it) return;
+    const r=document.createElement("div"); r.className="row";
+    r.innerHTML=`<span class="nm ${d.on?"":"off"}">${cap(it.name)} · ${it.time}</span><button class="ghost" data-up ${i===0?"disabled":""}>Выше</button><button class="ghost" data-down ${i===S.day.length-1?"disabled":""}>Ниже</button><button class="ghost" data-tog>${d.on?"Убрать":"Вернуть"}</button>`;
+    r.querySelector("[data-up]").onclick=()=>{ if(i>0){ [S.day[i-1],S.day[i]]=[S.day[i],S.day[i-1]]; save(); renderDayEd(); } };
+    r.querySelector("[data-down]").onclick=()=>{ if(i<S.day.length-1){ [S.day[i+1],S.day[i]]=[S.day[i],S.day[i+1]]; save(); renderDayEd(); } };
+    r.querySelector("[data-tog]").onclick=()=>{ d.on=!d.on; if(S.day.filter(x=>x.on).length<3) d.on=true; save(); renderDayEd(); };
+    box.appendChild(r); });
+}
 function renderPhotos(){
   $("photoList").innerHTML = PHOTOS.length ? PHOTOS.map((p,i)=>`<div class="ph"><img src="${p.img}" alt="${esc(p.name)}"><div><span><b>${esc(p.name)}</b>${p.act?" · "+esc(p.act):""}</span><button data-del="${i}">Удалить</button></div></div>`).join("") : `<p class="hint-txt">Фото пока нет.</p>`;
-  $("photoList").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ PHOTOS.splice(+b.dataset.del,1); savePhotos(); renderParent(); });
+  $("photoList").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ PHOTOS.splice(+b.dataset.del,1); savePhotos(); renderPhotos(); });
 }
 $("phAdd").onclick=()=>{
   const f=$("phFile").files[0], name=$("phName").value.trim(), act=$("phAct").value.trim(); $("phMsg").textContent="";
@@ -591,27 +943,29 @@ $("phAdd").onclick=()=>{
     c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
     PHOTOS.push({name, act, img:c.toDataURL("image/jpeg",0.8)});
     if(!savePhotos()){ PHOTOS.pop(); $("phMsg").textContent="Не хватает места на устройстве. Удалите одно из старых фото."; return; }
-    $("phFile").value=""; $("phName").value=""; $("phAct").value=""; renderParent(); };
+    $("phFile").value=""; $("phName").value=""; $("phAct").value=""; renderPhotos(); };
   img.onerror=()=>{ URL.revokeObjectURL(url); $("phMsg").textContent="Не получилось открыть этот файл. Попробуйте другое фото."; };
   img.src=url;
 };
 function renderParent(){
-  renderTrack("pred"); renderTrack("q"); renderPhotos();
+  const tb=$("tracksBox"); tb.innerHTML=""; TRACK_KEYS.forEach(k=>renderTrack(k, tb));
+  renderDayEd(); renderPhotos();
   seg($("soundSeg"), [{label:"Вкл",v:true},{label:"Выкл",v:false}], v=>S.sound===v, v=>{ S.sound=v; });
   seg($("rateSeg"), [{label:"Медленно",v:0.7},{label:"Обычно",v:0.85},{label:"Быстрее",v:1}], v=>S.rate===v, v=>{ S.rate=v; say("Положи мяч на стол"); });
   const last=a=>a.slice(-20), rows=[];
-  ["na","v","pod","ryadom","iz"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty==="pred" && (" "+l.task+" ").includes(" "+PREPS[k].w+" "))); rows.push({n:`Предлог ${PREPS[k].w}`, a}); });
-  ["chto","gde","kto","delaet"].forEach(k=>rows.push({n:TYPE_NAMES[k], a:last(S.log.filter(l=>l.ty===k))}));
-  $("stats").innerHTML=rows.map(r=>`<div class="stat"><b>${r.a.length? r.a.filter(x=>x.ok).length+" из "+r.a.length : "—"}</b><div>${r.n}</div></div>`).join("");
+  ["na","v","pod","ryadom","iz"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty==="pred" && (" "+l.task+" ").includes(" "+PREPS[k].w+" "))); if(a.length) rows.push({n:`Предлог ${PREPS[k].w}`, a}); });
+  ["chto","gde","kto","delaet","sent","form","say","day","read"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty===k)); if(a.length) rows.push({n:TYPE_NAMES[k], a}); });
+  $("stats").innerHTML = rows.length ? rows.map(r=>`<div class="stat"><b>${r.a.filter(x=>x.ok).length} из ${r.a.length}</b><div>${r.n}</div></div>`).join("") : `<p class="hint-txt">Здесь появятся результаты по каждому типу заданий.</p>`;
   const fmt=t=>{ const d=new Date(t); return d.toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}); };
-  const log=S.log.slice(-60).reverse();
-  $("logBody").innerHTML = log.length ? log.map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(l.task)}</td><td>${esc(l.ans)}</td><td class="${l.ok?"y":"n"}">${l.ok?"верно":"ошибка"}</td><td>${l.lvl}</td><td>${l.st}</td></tr>`).join("") : `<tr><td colspan="6">Пока пусто. Здесь появятся задания, как только Алан начнет заниматься.</td></tr>`;
+  const log=S.log.slice(-80).reverse();
+  $("logBody").innerHTML = log.length ? log.map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc((TRACKS[l.tr]||{}).title||"")}</td><td>${esc(l.task)}</td><td>${esc(l.ans)}</td><td class="${l.ok?"y":"n"}">${l.ok?"верно":"ошибка"}</td><td>${l.lvl}</td><td>${l.st}</td></tr>`).join("") : `<tr><td colspan="7">Пока пусто. Здесь появятся задания, как только Алан начнет заниматься.</td></tr>`;
   const cr=$("clearRow"); cr.innerHTML=`<button class="ghost danger" id="clearBtn">Очистить журнал</button>`;
   $("clearBtn").onclick=()=>{ cr.innerHTML=`<span>Удалить все записи журнала?</span><button class="ghost danger" id="clrYes">Да, удалить</button><button class="ghost" id="clrNo">Нет</button>`;
     $("clrYes").onclick=()=>{ S.log=[]; save(); renderParent(); }; $("clrNo").onclick=renderParent; };
 }
 
 renderStars(); renderHome();
+window.__alan = {TRACKS, S, makeActScene, STORIES, FRAMES, OBJS, DAY_ITEMS, start, nextTask};
 })();
 </script>
 
