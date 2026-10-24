@@ -43,6 +43,10 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .stars{display:flex;gap:6px}
 .stars span{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--card);transition:background .25s,border-color .25s}
 .stars span.on{background:#FFC800;border-color:#F59E00}
+.prog{flex:none;width:clamp(110px,22vw,220px);display:flex;flex-direction:column;gap:3px}
+.prog small{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
+.prog .bar{height:14px;border-radius:999px;background:var(--card);border:2px solid var(--line);overflow:hidden}
+.prog .fill{height:100%;width:0;background:linear-gradient(90deg,#FFC800,#12A84A);border-radius:999px;transition:width .5s}
 .hold-ring{position:absolute;inset:-3px;border-radius:18px;pointer-events:none}
 .hold-ring rect{fill:none;stroke:var(--where);stroke-width:4;stroke-dasharray:220;stroke-dashoffset:220}
 .holding .hold-ring rect{transition:stroke-dashoffset 1.2s linear;stroke-dashoffset:0}
@@ -204,6 +208,7 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
     </button>
     <div class="hdr-title" id="hdrTitle">Alan</div>
+    <div class="prog" id="prog" hidden><small id="progLbl"></small><div class="bar"><div class="fill" id="progFill"></div></div></div>
     <div class="stars" id="stars" aria-label="Звезды"></div>
     <button class="iconbtn" id="gearBtn" aria-label="Для родителей: удерживайте">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
@@ -254,6 +259,15 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
   </div>
 </div>
 
+<div class="overlay" id="lvlup" hidden>
+  <div class="sheet">
+    <svg viewBox="-60 -60 120 120" width="150" height="150" aria-hidden="true"><path d="M0,-52 L14,-16 L52,-16 L21,6 L33,44 L0,21 L-33,44 L-21,6 L-52,-16 L-14,-16Z" fill="#FFC800" stroke="#F59E00" stroke-width="5" stroke-linejoin="round"/></svg>
+    <h2>Новый уровень!</h2>
+    <p id="lvlupText"></p>
+    <button class="big-btn" id="lvlupNext">Дальше</button>
+  </div>
+</div>
+
 <div class="tanks" id="tanks" hidden>
   <div class="tanks-in">
     <div class="row"><h2>Мои танки</h2><button class="ghost" id="tanksClose">Назад</button></div>
@@ -285,6 +299,11 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
       <span class="msg" id="phMsg"></span>
       <div class="row"><label class="ghost" style="cursor:pointer">Загрузить набор фото (файл .json)<input type="file" id="phPack" accept="application/json,.json" hidden></label><span class="hint-txt" id="packMsg"></span></div>
     </details>
+    <div class="pbox">
+      <h3>Переход на новый уровень</h3>
+      <div class="row"><span class="seg" id="autoSeg"></span></div>
+      <p class="hint-txt">Автоматически — приложение само переводит Алана на следующий уровень и показывает ему «Новый уровень!». С подтверждением — переход только по кнопке в этом разделе.</p>
+    </div>
     <div class="pbox">
       <h3>Голос</h3>
       <div class="row"><span class="lbl">Озвучка</span><span class="seg" id="soundSeg"></span></div>
@@ -499,7 +518,7 @@ const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?
 const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
 
 /* ================= state ================= */
-const DEF = {lvl:{}, st:{}, resetAt:{}, sound:true, rate:0.85, medals:0, log:[], day:DAY_ITEMS.map(d=>({id:d.id,on:true}))};
+const DEF = {lvl:{}, st:{}, resetAt:{}, autoLevel:true, sound:true, rate:0.85, medals:0, log:[], day:DAY_ITEMS.map(d=>({id:d.id,on:true}))};
 TRACK_KEYS.forEach(k=>{ DEF.lvl[k]=1; DEF.st[k]=1; DEF.resetAt[k]=0; });
 let S = JSON.parse(JSON.stringify(DEF));
 try{ const raw = localStorage.getItem("alan-cards-v2"); if(raw){ const d=JSON.parse(raw);
@@ -572,7 +591,14 @@ function renderHome(){
   h.querySelector("[data-tanks]").onclick=openTanks;
   $("gearDot").hidden = !TRACK_KEYS.some(k=>readiness(k).ready);
 }
-function renderStars(){ $("stars").innerHTML=Array.from({length:5},(_,i)=>`<span class="${i<run.stars?"on":""}"></span>`).join(""); }
+function renderProg(){
+  const p=$("prog"); if(!mode){ p.hidden=true; return; }
+  const L=S.lvl[mode], max=TRACKS[mode].levels.length, st=S.st[mode];
+  const rr=readiness(mode); let frac = st<3 ? Math.min(1, run.streak[mode]/5) : Math.min(1, rr.ok/8)*Math.min(1, rr.n/10);
+  let pct = L>=max && st===3 ? 100 : ((st-1)+frac)/3*100;
+  p.hidden=false; $("progLbl").textContent = L>=max ? `Уровень ${L} (последний)` : `Уровень ${L} → ${L+1}`; $("progFill").style.width=pct+"%";
+}
+function renderStars(){ renderProg(); $("stars").innerHTML=Array.from({length:5},(_,i)=>`<span class="${i<run.stars?"on":""}"></span>`).join(""); }
 let launching=false;
 function launch(k, tile){
   if(launching) return; launching=true;
@@ -601,7 +627,7 @@ function showReady(k){
   $("rNo").onclick=goHome;
   say("Готов?");
 }
-function goHome(){ $("readyScr").hidden=true; clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
+function goHome(){ $("readyScr").hidden=true; $("prog").hidden=true; clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
 function start(m){ mode=m; cur=null; $("home").hidden=true; $("play").hidden=false; $("backBtn").hidden=false; $("hdrTitle").textContent=TRACKS[m].title; renderStars(); nextTask(); }
 $("backBtn").onclick=goHome;
 $("speakBtn").onclick=()=>{ if(cur&&cur.speech) say(cur.speech); };
@@ -612,9 +638,16 @@ function showArea(which){ ["answers","build","judge"].forEach(id=>$(id).hidden =
 
 /* ================= progress ================= */
 function win(tr){ run.errs[tr]=0; run.streak[tr]++; if(run.streak[tr]>=5 && S.st[tr]<3){ S.st[tr]++; run.streak[tr]=0; save(); } run.stars=Math.min(5,run.stars+1); renderStars(); }
-function lose(tr){ run.streak[tr]=0; run.errs[tr]++; if(run.errs[tr]>=2 && S.st[tr]>1){ S.st[tr]--; run.errs[tr]=0; save(); } }
+function lose(tr){ run.streak[tr]=0; run.errs[tr]++; if(run.errs[tr]>=2 && S.st[tr]>1){ S.st[tr]--; run.errs[tr]=0; save(); } renderProg(); }
 function neutral(tr){ run.streak[tr]=0; }
-function afterWin(){ if(run.stars>=5){ S.medals++; save(); showReward(); } else nextTask(); }
+function levelUpDue(){ return mode && S.autoLevel && readiness(mode).ready; }
+function showLevelUp(){
+  const tr=mode, L=S.lvl[tr]+1; setLevel(tr, L); save(); renderProg();
+  $("lvlupText").textContent=`Уровень ${L}: ${TRACKS[tr].levels[L-1].name}`;
+  $("lvlup").hidden=false; say("Новый уровень!");
+}
+$("lvlupNext").onclick=()=>{ $("lvlup").hidden=true; cur=null; nextTask(); };
+function afterWin(){ if(run.stars>=5){ S.medals++; save(); showReward(); } else if(levelUpDue()) showLevelUp(); else nextTask(); }
 function readiness(tr){
   const L=S.lvl[tr], main=mainType(tr,L);
   const rows=S.log.filter(l=>l.tr===tr && l.lvl===L && l.st===3 && l.ty===main && l.t>(S.resetAt[tr]||0)).slice(-10);
@@ -627,7 +660,7 @@ function showReward(){
   $("rewardText").textContent=`Новый танк: ${nm}. Всего танков: ${S.medals}.`;
   $("reward").hidden=false; say("Молодец!");
 }
-$("rewardNext").onclick=()=>{ $("reward").hidden=true; run.stars=0; renderStars(); nextTask(); };
+$("rewardNext").onclick=()=>{ $("reward").hidden=true; run.stars=0; renderStars(); if(levelUpDue()) showLevelUp(); else nextTask(); };
 function openTanks(){
   $("tanksNote").textContent = S.medals ? `Собрано танков: ${S.medals}. Новый танк — за каждые 5 правильных ответов.` : "Пока пусто. Новый танк — за каждые 5 правильных ответов.";
   $("tgrid").innerHTML = TANKS.map(([nm,c],i)=>{ const n = S.medals>i ? Math.floor((S.medals-1-i)/TANKS.length)+1 : 0;
@@ -1121,6 +1154,7 @@ $("phPack").onchange=()=>{
 function renderParent(){
   const tb=$("tracksBox"); tb.innerHTML=""; TRACK_KEYS.forEach(k=>renderTrack(k, tb));
   renderDayEd(); renderPhotos();
+  seg($("autoSeg"), [{label:"Автоматически",v:true},{label:"С подтверждением",v:false}], v=>S.autoLevel===v, v=>{ S.autoLevel=v; });
   seg($("soundSeg"), [{label:"Вкл",v:true},{label:"Выкл",v:false}], v=>S.sound===v, v=>{ S.sound=v; });
   seg($("rateSeg"), [{label:"Медленно",v:0.7},{label:"Обычно",v:0.85},{label:"Быстрее",v:1}], v=>S.rate===v, v=>{ S.rate=v; say("Положи мяч на стол"); });
   const last=a=>a.slice(-20), rows=[];
