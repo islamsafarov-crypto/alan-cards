@@ -98,7 +98,7 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .wcard{border-radius:14px;border:3px solid var(--rc);background:var(--rs);padding:10px 16px;font-family:var(--display);font-weight:700;font-size:clamp(20px,3vw,28px)}
 .wcard.wrong{animation:shake .35s;border-color:var(--err)}
 .wcard.hint{outline:4px dashed var(--ok);outline-offset:3px}
-.r-who{--rc:var(--who);--rs:var(--who-soft)} .r-does{--rc:var(--does);--rs:var(--does-soft)} .r-what{--rc:var(--what);--rs:var(--what-soft)} .r-where{--rc:var(--where);--rs:var(--where-soft)}
+.r-who{--rc:var(--who);--rs:var(--who-soft)} .r-does{--rc:var(--does);--rs:var(--does-soft)} .r-what{--rc:var(--what);--rs:var(--what-soft)} .r-where{--rc:var(--where);--rs:var(--where-soft)} .r-adj{--rc:#C62828;--rs:#FDECEC}
 
 /* say-it-yourself */
 .judge{display:flex;flex-direction:column;gap:10px}
@@ -466,13 +466,21 @@ const TRACKS = {
       {name:"Когда? (утром, днем, вечером)", kind:"when"},
       {name:"Что было до …?", kind:"before"}
     ]},
+  kakoy:{title:"Какой?", c:"#C62828", b:"#FDECEC", sub:"Цвет и размер: зеленый танк, большой мяч.", chips:[["КРАСНЫЙ","#C62828"],["БОЛЬШОЙ","#1565FF"]],
+    stages:"1 — два варианта; 2 — три варианта; 3 — вопрос только голосом.",
+    levels:[
+      {name:"Цвет: где красный мяч?", kind:"color"},
+      {name:"Размер: где маленький танк?", kind:"size"},
+      {name:"Какой? Какая? Какое?", kind:"agree"},
+      {name:"Целиком: большой зеленый танк", kind:"full"}
+    ]},
   read:{title:"Читаем", c:"#5D4037", b:"#F5EEE9", sub:"Прочитай и ответь на вопрос.", chips:[["ЧИТАЙ","#5D4037"]],
     stages:"1 — текст и два ответа; 2 — текст и три ответа; 3 — текст только на слух.",
     levels:[{name:"Одно предложение", n:1},{name:"Два предложения", n:2},{name:"Три предложения: потом, почему", n:3}]}
 };
 const TRACK_KEYS = Object.keys(TRACKS);
 const mainType = (tr, L) => tr==="q" ? TRACKS.q.levels[L-1].main : tr;
-const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", form:"Формы слов", say:"Скажи сам", day:"Мой день", read:"Читаем"};
+const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", form:"Формы слов", say:"Скажи сам", day:"Мой день", read:"Читаем"};
 const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
 
 /* ================= state ================= */
@@ -587,7 +595,7 @@ function openTanks(){
 $("tanksClose").onclick=()=>{ $("tanks").hidden=true; };
 
 /* ================= common question flow ================= */
-function nextTask(repeat){ busy=false; revealed=false; ({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask})[mode](repeat); }
+function nextTask(repeat){ busy=false; revealed=false; ({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask})[mode](repeat); }
 function present(cfg){ // cfg: {ty, html, speech, right, opts, cls, okSay, errSay, hide, fmt}
   Object.assign(cur, cfg);
   const st=S.st[mode];
@@ -874,6 +882,112 @@ function dayTask(repeat){
   }
 }
 
+/* ================= 8. adjectives: какой? ================= */
+const COLORS = [
+  {id:"red", c:"#E53935", f:{m:"красный", f:"красная", n:"красное"}},
+  {id:"blue", c:"#1E63D6", f:{m:"синий", f:"синяя", n:"синее"}},
+  {id:"green", c:"#2E9E3E", f:{m:"зеленый", f:"зеленая", n:"зеленое"}},
+  {id:"yellow", c:"#F9C70C", f:{m:"желтый", f:"желтая", n:"желтое"}}
+];
+const SIZES = {big:{s:1.25, f:{m:"большой", f:"большая", n:"большое"}}, small:{s:.62, f:{m:"маленький", f:"маленькая", n:"маленькое"}}};
+const CITEMS = [
+  {id:"ball", nom:"мяч", g:"m", colors:["red","blue","green","yellow"], svg:c=>`<circle r="40" fill="${c}"/><circle cx="-13" cy="-14" r="9" fill="rgba(255,255,255,.35)"/><path d="M-40,0 Q0,-18 40,0" stroke="#fff" stroke-width="5" fill="none"/><path d="M-31,25 Q0,9 31,25" stroke="#fff" stroke-width="5" fill="none"/>`},
+  {id:"tank", nom:"танк", g:"m", colors:["red","blue","green","yellow"], svg:c=>`<rect x="-48" y="6" width="96" height="26" rx="13" fill="#3F4A3C"/><circle cx="-32" cy="19" r="7" fill="#7C877A"/><circle cx="-11" cy="19" r="7" fill="#7C877A"/><circle cx="11" cy="19" r="7" fill="#7C877A"/><circle cx="32" cy="19" r="7" fill="#7C877A"/><rect x="-42" y="-8" width="84" height="18" rx="4" fill="${c}"/><rect x="-22" y="-28" width="44" height="22" rx="9" fill="${c}"/><rect x="18" y="-22" width="40" height="8" rx="3" fill="#3F4A3C"/>`},
+  {id:"cube", nom:"кубик", g:"m", colors:["red","blue","green","yellow"], svg:c=>`<rect x="-36" y="-36" width="72" height="72" rx="8" fill="${c}" stroke="rgba(0,0,0,.2)" stroke-width="4"/><text y="21" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="700" font-size="56" fill="#fff">А</text>`},
+  {id:"car", nom:"машинка", g:"f", colors:["red","blue","green","yellow"], svg:c=>`<path d="M-26,-6 L-16,-28 L18,-28 L30,-6Z" fill="${c}"/><rect x="-46" y="-8" width="92" height="30" rx="10" fill="${c}"/><path d="M-19,-8 L-12,-23 L-1,-23 L-1,-8Z M4,-8 L4,-23 L15,-23 L24,-8Z" fill="#E3F2FD"/><circle cx="-26" cy="22" r="11" fill="#263238"/><circle cx="26" cy="22" r="11" fill="#263238"/>`},
+  {id:"book", nom:"книга", g:"f", colors:["red","blue","green","yellow"], svg:c=>`<rect x="-38" y="-30" width="76" height="60" rx="5" fill="${c}"/><rect x="-38" y="-30" width="12" height="60" rx="3" fill="rgba(0,0,0,.25)"/><rect x="-20" y="-16" width="44" height="8" rx="3" fill="rgba(255,255,255,.8)"/>`},
+  {id:"apple", nom:"яблоко", g:"n", colors:["red","green","yellow"], svg:c=>`<path d="M0,-26 C-30,-44 -48,-8 -40,14 C-32,38 -12,44 0,36 C12,44 32,38 40,14 C48,-8 30,-44 0,-26Z" fill="${c}"/><path d="M0,-26 L4,-44" stroke="#5B3A1E" stroke-width="5" stroke-linecap="round"/><path d="M6,-38 C18,-52 32,-46 32,-40 C22,-32 12,-32 6,-38Z" fill="#3E9B4F"/><ellipse cx="-16" cy="-6" rx="7" ry="11" fill="rgba(255,255,255,.3)"/>`}
+];
+const COL = id => COLORS.find(c=>c.id===id);
+const XS = n => n===2 ? [320,680] : [200,500,800];
+function pickByTap(specs, rightIdx, onDone){
+  // specs: [{svg, s}] drawn in a row; the child taps the right picture
+  clearScene(); room(false);
+  const xs=XS(specs.length), rings=[];
+  specs.forEach((sp,i)=>{
+    const ring=document.createElementNS(NS,"circle"); ring.setAttribute("cx",xs[i]); ring.setAttribute("cy",300); ring.setAttribute("r",130); ring.setAttribute("fill","none"); ring.setAttribute("stroke-width","10"); $("sBack").appendChild(ring); rings.push(ring);
+    const it=addItem(sp.svg, xs[i], 300, sp.s, false); it.el.style.cursor="pointer";
+    it.el.addEventListener("click", ()=>{ if(busy) return; busy=true;
+      if(i===rightIdx){ ring.setAttribute("stroke","#12A84A"); onDone(true, sp.label); }
+      else { ring.setAttribute("stroke","#F06A1D"); rings[rightIdx].setAttribute("stroke","#12A84A"); rings[rightIdx].setAttribute("stroke-dasharray","18 12"); onDone(false, sp.label); } });
+  });
+}
+function kakoyTask(repeat){
+  const L=TRACKS.kakoy.levels[S.lvl.kakoy-1], st=S.st.kakoy;
+  if(!repeat || !cur || cur.kind!=="kakoy"){
+    const o=rnd(CITEMS), col=rnd(o.colors), size=rnd(["big","small"]);
+    cur={kind:"kakoy", o, col, size, seed:Math.random()};
+  }
+  cur.ty="kakoy"; const o=cur.o, g=o.g, C=COL(cur.col), Z=SIZES[cur.size];
+  const finish=(ok, phrase, picked)=>{ cur.render(ok?"ok":"err"); say(phrase);
+    logIt("kakoy","kakoy",cur.label, picked||"", ok);
+    if(ok){ win("kakoy"); later(afterWin,1800); } else { lose("kakoy"); later(()=>nextTask(true),2700); } };
+  showArea(null);
+  if(L.kind==="color" || L.kind==="size"){
+    const n = st===1?2:3; let specs, phrase, chipTxt;
+    if(L.kind==="color"){
+      const others=shuffle(o.colors.filter(c=>c!==cur.col)).slice(0,n-1);
+      specs=[cur.col,...others].map(cid=>({svg:o.svg(COL(cid).c), s:1.9, label:COL(cid).f[g]}));
+      phrase=`${cap(C.f[g])} ${o.nom}`; chipTxt=C.f[g];
+    } else {
+      const other = cur.size==="big"?"small":"big";
+      specs=[{svg:o.svg(C.c), s:1.9*Z.s, label:Z.f[g]}, {svg:o.svg(C.c), s:1.9*SIZES[other].s, label:SIZES[other].f[g]}];
+      if(n===3){ const o2=rnd(CITEMS.filter(x=>x!==o && x.colors.includes(cur.col))); specs.push({svg:o2.svg(C.c), s:1.9*Z.s, label:`${Z.f[o2.g]} ${o2.nom}`}); }
+      phrase=`${cap(Z.f[g])} ${o.nom}`; chipTxt=Z.f[g];
+    }
+    // stable shuffle per task so a repeat shows the same layout
+    const order = shuffle(specs.map((_,i)=>i)); const sp=order.map(i=>specs[i]); const right=order.indexOf(0);
+    cur.label=`Где ${chipTxt} ${o.nom}?`; cur.speech=cur.label;
+    cur.render = state=>{ if(st===3 && !revealed && !state){ hiddenCard(); return; } setCard(`<span class="chip where">ГДЕ</span><span class="chip" style="background:#C62828">${esc(chipTxt)}</span><span>${o.nom}?</span>`, state); };
+    cur.render(); say(cur.speech);
+    pickByTap(sp, right, (ok,label)=>finish(ok, phrase, label));
+    return;
+  }
+  if(L.kind==="agree"){
+    clearScene(); bigCenter(o.svg(C.c), 2.6);
+    const right=C.f[g], forms=uniq(["m","f","n"].map(k=>C.f[k])).filter(v=>v!==right);
+    const opts=[right, ...shuffle(forms).slice(0, st===1?1:2)];
+    const q={m:"Какой", f:"Какая", n:"Какое"}[g];
+    present({ty:"kakoy", label:`${q} ${o.nom}? (${right})`, html:`<span class="chip" style="background:#C62828">${q.toUpperCase()}</span><span>${o.nom}?</span>`, speech:`${q} ${o.nom}?`,
+      right, cls:"plain", okSay:`${cap(right)} ${o.nom}`, opts, fmt:endingFmt(opts)});
+    return;
+  }
+  // full: size + color + noun, built from cards
+  clearScene(); room(false);
+  { const other=SIZES[cur.size==="big"?"small":"big"], tx=cur.seed<.5?330:670, ox=1000-tx;
+    addItem(o.svg(C.c), tx, 320, 2.2*Z.s, false);
+    const g2=addItem(o.svg("#B0BEC5"), ox, 320, 2.2*other.s, false); g2.el.setAttribute("opacity",".55");
+    $("sBack").innerHTML=`<path d="M${tx-26},90 L${tx+26},90 L${tx},130Z" fill="#C62828"/>`; }
+  const words=[Z.f[g], C.f[g], o.nom], roles=["РАЗМЕР","ЦВЕТ","ЧТО"], cls=["r-adj","r-adj","r-what"];
+  const phrase=cap(words.join(" "));
+  cur.label=`Что это? (${phrase})`; cur.speech="Что это?"; cur.filled=0; cur.mistake=false;
+  cur.render = state=>setCard('<span class="chip what">ЧТО</span><span>это?</span><span class="chip small" style="background:#C62828">КАКОЙ</span>', state);
+  cur.render(); showArea("build");
+  $("slots").innerHTML = words.map((w,i)=>`<div class="slot ${cls[i]} ${i===0&&st<3?"next":""}"><small>${roles[i]}</small>&nbsp;</div>`).join("");
+  const extra = st===1?0:(st===2?1:2);
+  const wrongSize = SIZES[cur.size==="big"?"small":"big"].f[g];
+  const wrongColor = o.colors.filter(c=>c!==cur.col).map(c=>COL(c).f[g]);
+  const wrongNoun = CITEMS.filter(x=>x!==o).map(x=>x.nom);
+  const wrongForms = uniq(["m","f","n"].map(k=>C.f[k])).filter(v=>v!==C.f[g]);
+  let cards=words.map((w,i)=>({i,w,ok:true}));
+  if(extra){ cards.push({i:0,w:wrongSize}); shuffle([...wrongColor,...wrongForms]).slice(0,extra).forEach(w=>cards.push({i:1,w})); shuffle(wrongNoun).slice(0,extra).forEach(w=>cards.push({i:2,w})); }
+  const bank=$("bank"); bank.innerHTML="";
+  shuffle(cards).forEach(cd=>{
+    const b=document.createElement("button"); b.className=`wcard ${cls[cd.i]}`; b.textContent=cd.w;
+    b.onclick=()=>{ if(busy) return; const k=cur.filled;
+      if(cd.w===words[k] && cd.i===k){
+        const slot=$("slots").children[k]; slot.innerHTML=`<small>${roles[k]}</small>${esc(cd.w)}`; slot.classList.add("filled"); slot.classList.remove("next"); b.remove(); cur.filled++;
+        if(cur.filled<words.length){ if(st<3) $("slots").children[cur.filled].classList.add("next"); say(cd.w); }
+        else { busy=true; cur.render("ok"); say(phrase); logIt("kakoy","kakoy",cur.label, cur.mistake?"с ошибками":"верно", !cur.mistake);
+          if(cur.mistake){ lose("kakoy"); later(()=>nextTask(false),2600); } else { win("kakoy"); later(afterWin,2200); } }
+      } else { cur.mistake=true; b.classList.remove("wrong"); void b.offsetWidth; b.classList.add("wrong");
+        [...bank.children].forEach(x=>x.classList.toggle("hint", x.textContent===words[k])); say(words[k]); }
+    };
+    bank.appendChild(b);
+  });
+  say(cur.speech);
+}
+
 /* ================= 7. reading ================= */
 function readTask(repeat){
   const L=TRACKS.read.levels[S.lvl.read-1], st=S.st.read;
@@ -968,7 +1082,7 @@ function renderParent(){
   seg($("rateSeg"), [{label:"Медленно",v:0.7},{label:"Обычно",v:0.85},{label:"Быстрее",v:1}], v=>S.rate===v, v=>{ S.rate=v; say("Положи мяч на стол"); });
   const last=a=>a.slice(-20), rows=[];
   ["na","v","pod","ryadom","iz"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty==="pred" && (" "+l.task+" ").includes(" "+PREPS[k].w+" "))); if(a.length) rows.push({n:`Предлог ${PREPS[k].w}`, a}); });
-  ["chto","gde","kto","delaet","sent","form","say","day","read"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty===k)); if(a.length) rows.push({n:TYPE_NAMES[k], a}); });
+  ["chto","gde","kto","delaet","sent","kakoy","form","say","day","read"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty===k)); if(a.length) rows.push({n:TYPE_NAMES[k], a}); });
   $("stats").innerHTML = rows.length ? rows.map(r=>`<div class="stat"><b>${r.a.filter(x=>x.ok).length} из ${r.a.length}</b><div>${r.n}</div></div>`).join("") : `<p class="hint-txt">Здесь появятся результаты по каждому типу заданий.</p>`;
   const fmt=t=>{ const d=new Date(t); return d.toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}); };
   const log=S.log.slice(-80).reverse();
