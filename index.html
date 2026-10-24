@@ -300,6 +300,11 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
       <div class="row"><label class="ghost" style="cursor:pointer">Загрузить набор фото (файл .json)<input type="file" id="phPack" accept="application/json,.json" hidden></label><span class="hint-txt" id="packMsg"></span></div>
     </details>
     <div class="pbox">
+      <h3>Сброс после тестирования</h3>
+      <p class="hint-txt">Перед тем как Алан начнет заниматься, сбросьте то, что набрали взрослые. Фото семьи, распорядок дня и настройки голоса не удаляются.</p>
+      <div class="row" id="resetRow"></div>
+    </div>
+    <div class="pbox">
       <h3>Переход на новый уровень</h3>
       <div class="row"><span class="seg" id="autoSeg"></span></div>
       <p class="hint-txt">Автоматически — приложение само переводит Алана на следующий уровень и показывает ему «Новый уровень!». С подтверждением — переход только по кнопке в этом разделе.</p>
@@ -1151,7 +1156,16 @@ $("phPack").onchange=()=>{
     m.textContent=`Загружено фото: ${list.length}.`; $("phPack").value=""; renderPhotos(); };
   rd.readAsText(f);
 };
-function renderParent(){
+function renderResetRow(){
+  const r=$("resetRow");
+  r.innerHTML=`<button class="ghost danger" id="rsTanks">Обнулить танки (${S.medals})</button><button class="ghost danger" id="rsAll">Сбросить весь прогресс</button>`;
+  const ask=(q, fn)=>{ r.innerHTML=`<span>${q}</span><button class="ghost danger" id="rsYes">Да, сбросить</button><button class="ghost" id="rsNo">Нет</button>`;
+    $("rsYes").onclick=()=>{ fn(); save(); run.stars=0; renderStars(); renderParent(); }; $("rsNo").onclick=renderResetRow; };
+  $("rsTanks").onclick=()=>ask("Обнулить все танки?", ()=>{ S.medals=0; });
+  $("rsAll").onclick=()=>ask("Сбросить уровни, ступени, танки и журнал во всех модулях?", ()=>{
+    TRACK_KEYS.forEach(k=>{ S.lvl[k]=1; S.st[k]=1; S.resetAt[k]=Date.now(); run.streak[k]=0; run.errs[k]=0; }); S.medals=0; S.log=[]; });
+}
+function renderParent(){ renderResetRow();
   const tb=$("tracksBox"); tb.innerHTML=""; TRACK_KEYS.forEach(k=>renderTrack(k, tb));
   renderDayEd(); renderPhotos();
   seg($("autoSeg"), [{label:"Автоматически",v:true},{label:"С подтверждением",v:false}], v=>S.autoLevel===v, v=>{ S.autoLevel=v; });
