@@ -326,9 +326,9 @@ const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?
 const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
 
 /* ================= state ================= */
-const DEF = {lvl:{pred:1,q:1}, st:{pred:1,q:1}, sound:true, rate:0.85, medals:0, log:[]};
+const DEF = {lvl:{pred:1,q:1}, st:{pred:1,q:1}, resetAt:{pred:0,q:0}, sound:true, rate:0.85, medals:0, log:[]};
 let S = JSON.parse(JSON.stringify(DEF));
-try{ const raw = localStorage.getItem("alan-cards-v2"); if(raw){ const d=JSON.parse(raw); S=Object.assign(S,d,{lvl:Object.assign({},DEF.lvl,d.lvl||{}), st:Object.assign({},DEF.st,d.st||{})}); }
+try{ const raw = localStorage.getItem("alan-cards-v2"); if(raw){ const d=JSON.parse(raw); S=Object.assign(S,d,{lvl:Object.assign({},DEF.lvl,d.lvl||{}), st:Object.assign({},DEF.st,d.st||{}), resetAt:Object.assign({},DEF.resetAt,d.resetAt||{})}); }
      else { const old = JSON.parse(localStorage.getItem("alan-cards-v1")||"null"); if(old){ S.sound=old.sound!==false; S.rate=old.rate||0.85; S.medals=old.medals||0; } } }catch(e){}
 let PHOTOS = [];
 try{ PHOTOS = JSON.parse(localStorage.getItem("alan-cards-photos")||"[]"); if(!Array.isArray(PHOTOS)) PHOTOS=[]; }catch(e){ PHOTOS=[]; }
@@ -389,7 +389,7 @@ function lose(tr){ run.streak[tr]=0; run.errs[tr]++; if(run.errs[tr]>=2 && S.st[
 function afterWin(){ if(run.stars>=5){ S.medals++; save(); showReward(); } else nextTask(); }
 function readiness(tr){
   const L=S.lvl[tr], main = tr==="pred"?"pred":LEVELS.q[L-1].main;
-  const rows=S.log.filter(l=>l.tr===tr && l.lvl===L && l.st===3 && l.ty===main).slice(-10);
+  const rows=S.log.filter(l=>l.tr===tr && l.lvl===L && l.st===3 && l.ty===main && l.t>(S.resetAt[tr]||0)).slice(-10);
   const ok=rows.filter(r=>r.ok).length;
   return {n:rows.length, ok, ready: rows.length===10 && ok>=8 && L<LEVELS[tr].length};
 }
@@ -555,7 +555,7 @@ gear.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" ") openParen
 $("parentClose").onclick=()=>{ $("parent").hidden=true; if(mode){ cur=null; nextTask(); } else renderHome(); };
 function openParent(){ clearTimeout(timer); try{speechSynthesis.cancel();}catch(e){} renderParent(); $("parent").hidden=false; }
 function seg(el, items, isOn, onTap){ el.innerHTML=""; items.forEach(it=>{ const b=document.createElement("button"); b.textContent=it.label; if(isOn(it.v)) b.classList.add("on"); b.onclick=()=>{ onTap(it.v); save(); renderParent(); }; el.appendChild(b); }); }
-function setLevel(tr, v){ S.lvl[tr]=v; S.st[tr]=1; run.streak[tr]=0; run.errs[tr]=0; }
+function setLevel(tr, v){ S.lvl[tr]=v; S.st[tr]=1; S.resetAt[tr]=Date.now(); run.streak[tr]=0; run.errs[tr]=0; }
 function renderTrack(tr){
   const box=$(tr==="pred"?"trackPred":"trackQ"), title = tr==="pred"?"Куда положить? (предлоги)":"Вопросы";
   const r=readiness(tr), L=S.lvl[tr], max=LEVELS[tr].length;
@@ -566,10 +566,17 @@ function renderTrack(tr){
     <div class="ready ${r.ready?"go":""}">${
       L>=max ? `<span>Это последний уровень. Следующие добавим позже.</span>` :
       r.ready ? `<span>Готов к уровню ${L+1}: на ступени 3 верно <b>${r.ok} из 10</b>.</span><button class="primary" data-up>Перейти на уровень ${L+1}</button>` :
-      `<span>До уровня ${L+1}: на ступени 3 верно <b>${r.ok} из ${r.n}</b> последних (нужно 8 из 10).</span>`}</div>`;
+      `<span>До уровня ${L+1}: на ступени 3 верно <b>${r.ok} из ${r.n}</b> последних (нужно 8 из 10).</span>`}</div>
+    <div class="row" data-reset><button class="ghost">Начать уровень ${L} заново</button><span class="hint-txt">Подсказки вернутся на ступень 1, счетчик готовности обнулится. Журнал сохранится.</span></div>`;
   seg(box.querySelector('[data-k="lvl"]'), LEVELS[tr].map((_,i)=>({label:String(i+1),v:i+1})), v=>S.lvl[tr]===v, v=>setLevel(tr,v));
   seg(box.querySelector('[data-k="st"]'), [1,2,3].map(v=>({label:String(v),v})), v=>S.st[tr]===v, v=>{ S.st[tr]=v; run.streak[tr]=0; run.errs[tr]=0; });
   const up=box.querySelector("[data-up]"); if(up) up.onclick=()=>{ setLevel(tr, L+1); save(); renderParent(); };
+  const rs=box.querySelector("[data-reset]");
+  rs.querySelector("button").onclick=()=>{
+    rs.innerHTML=`<span>Начать уровень ${L} заново?</span><button class="primary" data-yes>Да, заново</button><button class="ghost" data-no>Нет</button>`;
+    rs.querySelector("[data-yes]").onclick=()=>{ setLevel(tr, L); save(); renderParent(); };
+    rs.querySelector("[data-no]").onclick=renderParent;
+  };
 }
 function renderPhotos(){
   $("photoList").innerHTML = PHOTOS.length ? PHOTOS.map((p,i)=>`<div class="ph"><img src="${p.img}" alt="${esc(p.name)}"><div><span><b>${esc(p.name)}</b>${p.act?" · "+esc(p.act):""}</span><button data-del="${i}">Удалить</button></div></div>`).join("") : `<p class="hint-txt">Фото пока нет.</p>`;
