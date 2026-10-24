@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Alan">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#D6EEFF">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-180.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Alan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=Rubik:wght@600;700&display=swap">
+<style>
+/* Layout: one-screen tablet app — header, task card, big scene, answer row. Single bright light look on purpose. */
+:root{
+  --bg:#D6EEFF; --card:#FFFFFF; --ink:#16212B; --muted:#4A5A68; --line:#B9D6EC;
+  --wall:#FFF6D6; --floor:#F0A94E; --rug:#4FC3F7;
+  --where:#1565FF; --where-soft:#D9E6FF;
+  --what:#12A84A; --what-soft:#D6F5E1;
+  --who:#F57C00; --who-soft:#FFE8CC;
+  --does:#E0A800; --does-soft:#FFF4C2;
+  --ok:#12A84A; --ok-soft:#CFF3DC; --err:#F06A1D; --err-soft:#FFE3D2;
+  --display:"Rubik","Nunito",system-ui,-apple-system,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);margin:0;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none}
+button:focus-visible,input:focus-visible{outline:3px solid var(--where);outline-offset:3px}
+.app{height:100%;display:flex;flex-direction:column;gap:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;box-sizing:border-box;max-width:1100px;margin:0 auto}
+header{display:flex;align-items:center;gap:12px;min-height:52px}
+.iconbtn{width:52px;height:52px;border-radius:16px;background:var(--card);border:2px solid var(--line);display:grid;place-items:center;position:relative;flex:none}
+.iconbtn svg{width:26px;height:26px}
+.dot{position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--err);border:2px solid var(--card)}
+.hdr-title{font-family:var(--display);font-weight:700;font-size:22px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stars{display:flex;gap:6px}
+.stars span{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--card);transition:background .25s,border-color .25s}
+.stars span.on{background:#FFC800;border-color:#F59E00}
+.hold-ring{position:absolute;inset:-3px;border-radius:18px;pointer-events:none}
+.hold-ring rect{fill:none;stroke:var(--where);stroke-width:4;stroke-dasharray:220;stroke-dashoffset:220}
+.holding .hold-ring rect{transition:stroke-dashoffset 1.2s linear;stroke-dashoffset:0}
+
+.home{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-content:center}
+.tile{border:3px solid var(--line);border-radius:24px;padding:24px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;min-height:220px}
+#goPred{border-color:var(--where);background:#EEF4FF}
+#goQ{border-color:var(--what);background:#EAFBF0}
+.tile .tile-art{width:100%;height:110px}
+.tile h2{font-family:var(--display);font-size:30px;margin:0;text-wrap:balance}
+.tile p{margin:0;color:var(--muted);font-size:16px}
+.lvl-pill{font-weight:800;font-size:14px;padding:5px 12px;border-radius:999px;background:var(--card);border:2px solid currentColor}
+#goPred .lvl-pill{color:var(--where)} #goQ .lvl-pill{color:var(--what)}
+.home-note{grid-column:1/-1;text-align:center;color:var(--muted);font-size:14px}
+
+.play{flex:1;display:flex;flex-direction:column;gap:12px;min-height:0}
+.task{background:var(--card);border:3px solid var(--line);border-radius:22px;padding:14px 16px;display:flex;align-items:center;gap:14px;transition:border-color .2s,background .2s}
+.task.ok{border-color:var(--ok);background:var(--ok-soft)}
+.task.err{border-color:var(--err);background:var(--err-soft)}
+.task-text{flex:1;min-width:0;font-family:var(--display);font-weight:600;font-size:clamp(26px,4.6vw,44px);line-height:1.25;display:flex;flex-wrap:wrap;align-items:center;gap:.25em .4em}
+.chip{display:inline-block;padding:.05em .45em;border-radius:.35em;color:#fff;font-weight:700;letter-spacing:.02em}
+.chip.where{background:var(--where)} .chip.what{background:var(--what)} .chip.who{background:var(--who)} .chip.does{background:var(--does);color:#2A2000}
+.task-text .muted{color:var(--muted)}
+.speak{width:64px;height:64px;border-radius:50%;background:var(--where-soft);display:grid;place-items:center;flex:none}
+.speak svg{width:32px;height:32px}
+.reveal{font-family:var(--body);font-size:16px;font-weight:800;color:var(--where);padding:10px 14px;border-radius:12px;background:var(--where-soft)}
+.scene-wrap{flex:1;min-height:0;background:var(--card);border:2px solid var(--line);border-radius:22px;overflow:hidden;display:flex;position:relative}
+#scene{width:100%;height:100%;touch-action:none;display:block}
+.need{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;background:var(--card);font-size:22px;font-weight:700;color:var(--muted)}
+.answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.ans{border:3px solid var(--line);border-radius:18px;padding:16px 10px;font-family:var(--display);font-weight:700;font-size:clamp(22px,3.6vw,32px);transition:transform .15s,border-color .2s,background .2s;background:var(--card)}
+.ans:active{transform:scale(.97)}
+.ans.where{border-color:var(--where);background:#EEF4FF}
+.ans.what{border-color:var(--what);background:#EAFBF0}
+.ans.who{border-color:var(--who);background:#FFF3E3}
+.ans.does{border-color:var(--does);background:#FFF9DC}
+.ans.right{background:var(--ok-soft);border-color:var(--ok)}
+.ans.wrong{background:var(--err-soft);border-color:var(--err);animation:shake .35s}
+.ans.hint{border-color:var(--ok);border-style:dashed;border-width:4px}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.wall{fill:var(--wall)} .floor{fill:var(--floor)} .rug{fill:var(--rug)}
+.wood{fill:#D2691E} .wood-dark{fill:#A0501A}
+.chair{fill:#2E7DD7} .chair-dark{fill:#1F5FAF}
+.box-back{fill:#E0912B} .box-in{fill:#A85F12} .box-front{fill:#FFB338} .box-edge{fill:#F29F1F}
+.basket{fill:#D99245}
+.label{font-family:var(--display);font-weight:700;font-size:26px;fill:#fff;letter-spacing:1px}
+.zone{fill:rgba(21,101,255,.14);stroke:var(--where);stroke-width:5;stroke-dasharray:14 10;opacity:0;pointer-events:none}
+.zone.show{opacity:1;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{fill:rgba(21,101,255,.30)}}
+.obj{cursor:grab} .obj.drag{cursor:grabbing}
+
+.overlay{position:fixed;inset:0;background:rgba(22,33,43,.45);display:grid;place-items:center;padding:16px;z-index:20}
+.sheet{background:var(--card);border-radius:24px;padding:24px;max-width:560px;width:100%;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
+.sheet h2{font-family:var(--display);font-size:36px;margin:0}
+.sheet p{margin:0;font-size:18px;color:var(--muted)}
+.big-btn{background:var(--where);color:#fff;font-family:var(--display);font-weight:700;font-size:24px;padding:14px 40px;border-radius:16px}
+
+.parent{position:fixed;inset:0;background:var(--bg);z-index:30;overflow-y:auto;-webkit-user-select:text;user-select:text}
+.parent-in{max-width:780px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px;display:flex;flex-direction:column;gap:16px}
+.parent h2{font-family:var(--display);font-size:26px;margin:0;flex:1}
+.parent h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.pbox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.row .lbl{min-width:130px;font-weight:800}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{padding:9px 14px;font-weight:800;font-size:15px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--where);color:#fff}
+.hint-txt{color:var(--muted);font-size:14px;margin:0}
+.levels{margin:0;padding-left:20px;color:var(--muted);font-size:14px;display:grid;gap:2px}
+.levels li.cur{color:var(--ink);font-weight:800}
+.ready{border-radius:14px;padding:12px 14px;background:var(--where-soft);display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.ready.go{background:var(--ok-soft)}
+.ready b{font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.stat b{font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums}
+.stat div{color:var(--muted);font-size:13px}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.ph{border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.ph img{width:100%;aspect-ratio:1;object-fit:cover;display:block;max-width:100%}
+.ph div{padding:8px 10px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.ph button{color:var(--err);font-weight:800;font-size:13px}
+.addph{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}
+.addph label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:800;color:var(--muted)}
+.addph input[type=text]{font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;color:var(--ink);background:var(--card)}
+.addph input[type=file]{font-size:14px;max-width:100%}
+.logwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
+.ghost{padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:800}
+.primary{padding:10px 16px;border-radius:12px;background:var(--ok);color:#fff;font-weight:800}
+.danger{color:var(--err)}
+.msg{font-size:14px;font-weight:700;color:var(--err)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:520px){.tile{min-height:0}.tile .tile-art{height:80px}.speak{width:52px;height:52px}}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header>
+    <button class="iconbtn" id="backBtn" aria-label="На главный экран" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="hdr-title" id="hdrTitle">Alan</div>
+    <div class="stars" id="stars" aria-label="Звезды"></div>
+    <button class="iconbtn" id="gearBtn" aria-label="Для родителей: удерживайте">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      <svg class="hold-ring" viewBox="0 0 58 58"><rect x="2" y="2" width="54" height="54" rx="17"/></svg>
+      <span class="dot" id="gearDot" hidden></span>
+    </button>
+  </header>
+
+  <section class="home" id="home">
+    <button class="tile" id="goPred">
+      <svg class="tile-art" viewBox="0 0 300 110" aria-hidden="true">
+        <rect x="70" y="52" width="160" height="12" rx="4" class="wood"/>
+        <rect x="82" y="64" width="10" height="44" class="wood-dark"/><rect x="208" y="64" width="10" height="44" class="wood-dark"/>
+        <g transform="translate(150,30) scale(.5)"><circle r="40" fill="#E2533B"/><path d="M-40,0 Q0,-18 40,0" stroke="#fff" stroke-width="6" fill="none"/></g>
+        <rect x="96" y="12" width="44" height="24" rx="6" fill="#1565FF"/><text x="118" y="30" text-anchor="middle" class="label" style="font-size:16px">НА</text>
+      </svg>
+      <h2>Куда положить?</h2>
+      <span class="lvl-pill" id="pillPred"></span>
+      <p>Слушай и перетаскивай пальцем.</p>
+    </button>
+    <button class="tile" id="goQ">
+      <svg class="tile-art" viewBox="0 0 300 110" aria-hidden="true">
+        <rect x="20" y="30" width="80" height="50" rx="12" fill="#12A84A"/><text x="60" y="64" text-anchor="middle" class="label" style="font-size:22px">ЧТО?</text>
+        <rect x="110" y="30" width="80" height="50" rx="12" fill="#1565FF"/><text x="150" y="64" text-anchor="middle" class="label" style="font-size:22px">ГДЕ?</text>
+        <rect x="200" y="30" width="80" height="50" rx="12" fill="#F57C00"/><text x="240" y="64" text-anchor="middle" class="label" style="font-size:22px">КТО?</text>
+      </svg>
+      <h2>Вопросы</h2>
+      <span class="lvl-pill" id="pillQ"></span>
+      <p>Читай вопрос и выбирай ответ.</p>
+    </button>
+    <p class="home-note">Для родителей: удерживайте шестеренку, чтобы открыть уровни, фото семьи и журнал.</p>
+  </section>
+
+  <section class="play" id="play" hidden>
+    <div class="task" id="task">
+      <div class="task-text" id="taskText"></div>
+      <button class="speak" id="speakBtn" aria-label="Повторить вслух">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1565FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4z" fill="#1565FF"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      </button>
+    </div>
+    <div class="scene-wrap">
+      <svg id="scene" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-label="Комната">
+        <rect class="wall" x="0" y="0" width="1000" height="540"/>
+        <rect class="floor" x="0" y="540" width="1000" height="60"/>
+        <g id="sBack"></g>
+        <g id="layerBack"></g>
+        <g id="sFront"></g>
+        <g id="sZones"></g>
+        <g id="layerTop"></g>
+      </svg>
+      <div class="need" id="need" hidden></div>
+    </div>
+    <div class="answers" id="answers" hidden></div>
+  </section>
+</div>
+
+<div class="overlay" id="reward" hidden>
+  <div class="sheet">
+    <svg viewBox="-60 -50 120 100" width="180" height="150" aria-hidden="true" id="rewardArt"></svg>
+    <h2>Молодец!</h2>
+    <p id="rewardText"></p>
+    <button class="big-btn" id="rewardNext">Дальше</button>
+  </div>
+</div>
+
+<div class="parent" id="parent" hidden>
+  <div class="parent-in">
+    <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
+    <div class="pbox" id="trackPred"></div>
+    <div class="pbox" id="trackQ"></div>
+    <div class="pbox">
+      <h3>Ступени подсказок</h3>
+      <p class="hint-txt">Внутри уровня ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Предлоги: 1 — слово, голос и подсвеченное место; 2 — слово и голос; 3 — только голос. Вопросы: 1 — два варианта ответа; 2 — больше вариантов; 3 — вопрос только голосом. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
+    </div>
+    <div class="pbox">
+      <h3>Фото семьи (для вопросов «Кто это?» и «Что делает?»)</h3>
+      <p class="hint-txt">Добавьте фото людей, которых Алан знает. Имя пишите так, как он их называет: «мама», «папа», «Алан». «Что делает» — одно слово: «ест», «спит», «играет». Для «Кто это?» нужно минимум два разных человека.</p>
+      <div class="photos" id="photoList"></div>
+      <div class="addph">
+        <label>Фото<input type="file" id="phFile" accept="image/*"></label>
+        <label>Кто это<input type="text" id="phName" placeholder="мама"></label>
+        <label>Что делает<input type="text" id="phAct" placeholder="ест"></label>
+        <button class="primary" id="phAdd">Добавить фото</button>
+      </div>
+      <span class="msg" id="phMsg"></span>
+    </div>
+    <div class="pbox">
+      <h3>Голос</h3>
+      <div class="row"><span class="lbl">Озвучка</span><span class="seg" id="soundSeg"></span></div>
+      <div class="row"><span class="lbl">Скорость</span><span class="seg" id="rateSeg"></span></div>
+    </div>
+    <div class="pbox">
+      <h3>Результаты (последние 20 по каждому типу)</h3>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="pbox">
+      <h3>Журнал (последние 60 заданий)</h3>
+      <div class="logwrap"><table><thead><tr><th>Время</th><th>Задание</th><th>Ответ</th><th></th><th>Ур.</th><th>Ст.</th></tr></thead><tbody id="logBody"></tbody></table></div>
+      <p class="hint-txt">Журнал и фото хранятся только на этом устройстве, в этом браузере.</p>
+      <div class="row" id="clearRow"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+const rnd = a => a[Math.floor(Math.random()*a.length)];
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ================= content ================= */
+const OBJS = [
+  {id:"ball", nom:"мяч", acc:"мяч", svg:'<circle r="40" fill="#E2533B"/><circle cx="-13" cy="-14" r="9" fill="rgba(255,255,255,.35)"/><path d="M-40,0 Q0,-18 40,0" stroke="#fff" stroke-width="5" fill="none"/><path d="M-31,25 Q0,9 31,25" stroke="#fff" stroke-width="5" fill="none"/>'},
+  {id:"apple", nom:"яблоко", acc:"яблоко", svg:'<path d="M0,-26 C-30,-44 -48,-8 -40,14 C-32,38 -12,44 0,36 C12,44 32,38 40,14 C48,-8 30,-44 0,-26Z" fill="#D8392B"/><path d="M0,-26 L4,-44" stroke="#5B3A1E" stroke-width="5" stroke-linecap="round"/><path d="M6,-38 C18,-52 32,-46 32,-40 C22,-32 12,-32 6,-38Z" fill="#3E9B4F"/><ellipse cx="-16" cy="-6" rx="7" ry="11" fill="rgba(255,255,255,.3)"/>'},
+  {id:"bear", nom:"мишка", acc:"мишку", svg:'<circle cx="-27" cy="-28" r="14" fill="#9A6A3E"/><circle cx="27" cy="-28" r="14" fill="#9A6A3E"/><circle cx="-27" cy="-28" r="7" fill="#D7AE7E"/><circle cx="27" cy="-28" r="7" fill="#D7AE7E"/><circle r="38" fill="#A8743F"/><ellipse cy="12" rx="17" ry="13" fill="#E6C79F"/><ellipse cy="6" rx="7" ry="5" fill="#3B2A1E"/><circle cx="-13" cy="-8" r="4.5" fill="#3B2A1E"/><circle cx="13" cy="-8" r="4.5" fill="#3B2A1E"/>'},
+  {id:"tank", nom:"танк", acc:"танк", svg:'<rect x="-48" y="6" width="96" height="26" rx="13" fill="#3F4A3C"/><circle cx="-32" cy="19" r="7" fill="#7C877A"/><circle cx="-11" cy="19" r="7" fill="#7C877A"/><circle cx="11" cy="19" r="7" fill="#7C877A"/><circle cx="32" cy="19" r="7" fill="#7C877A"/><rect x="-42" y="-8" width="84" height="18" rx="4" fill="#5E7F4A"/><rect x="-22" y="-28" width="44" height="22" rx="9" fill="#6F9257"/><rect x="18" y="-22" width="40" height="8" rx="3" fill="#4E6B3D"/><circle cx="-6" cy="-17" r="4" fill="#E9C84A"/>'},
+  {id:"car", nom:"машинка", acc:"машинку", svg:'<path d="M-26,-6 L-16,-28 L18,-28 L30,-6Z" fill="#1E88E5"/><rect x="-46" y="-8" width="92" height="30" rx="10" fill="#1E88E5"/><path d="M-19,-8 L-12,-23 L-1,-23 L-1,-8Z M4,-8 L4,-23 L15,-23 L24,-8Z" fill="#CFE8FF"/><circle cx="-26" cy="22" r="11" fill="#263238"/><circle cx="26" cy="22" r="11" fill="#263238"/><circle cx="-26" cy="22" r="4" fill="#B0BEC5"/><circle cx="26" cy="22" r="4" fill="#B0BEC5"/>'},
+  {id:"cube", nom:"кубик", acc:"кубик", svg:'<rect x="-36" y="-36" width="72" height="72" rx="8" fill="#FFC107" stroke="#E0A000" stroke-width="4"/><text y="21" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="700" font-size="56" fill="#C62828">А</text>'},
+  {id:"book", nom:"книга", acc:"книгу", svg:'<rect x="-38" y="-30" width="76" height="60" rx="5" fill="#8E24AA"/><rect x="-38" y="-30" width="12" height="60" rx="3" fill="#6A1B9A"/><rect x="-20" y="-16" width="44" height="8" rx="3" fill="#F3E5F5"/><rect x="-20" y="-2" width="30" height="6" rx="3" fill="#E1BEE7"/>'},
+  {id:"banana", nom:"банан", acc:"банан", svg:'<path d="M-44,-14 C-30,26 24,34 44,-6 C38,-4 34,-2 30,2 C14,22 -20,16 -34,-16 Z" fill="#FFD600" stroke="#E6B800" stroke-width="3"/><path d="M-44,-14 L-48,-22" stroke="#6D4C41" stroke-width="5" stroke-linecap="round"/>'}
+];
+const BASE4 = OBJS.slice(0,4), ALL8 = OBJS;
+
+const CONT_ZONES = {v:[625,300,845,560], ryadom:[850,380,1000,560]};
+const PLACES = {
+  table:{kind:"surface", acc:"стол", loc:"столе", ins:"столом", gen:"стола",
+    back:'<ellipse cx="395" cy="546" rx="190" ry="10" fill="rgba(0,0,0,.08)"/><rect class="wood-dark" x="245" y="322" width="24" height="220" rx="4"/><rect class="wood-dark" x="521" y="322" width="24" height="220" rx="4"/><rect class="wood" x="220" y="292" width="350" height="34" rx="8"/><text class="label" x="395" y="318" text-anchor="middle">СТОЛ</text>',
+    front:'', zones:{na:[210,130,580,295], pod:[265,325,525,560]}, pos:{na:[395,250], pod:[395,492]}},
+  chair:{kind:"surface", acc:"стул", loc:"стуле", ins:"стулом", gen:"стула",
+    back:'<ellipse cx="360" cy="546" rx="120" ry="9" fill="rgba(0,0,0,.08)"/><rect class="chair-dark" x="262" y="370" width="20" height="172" rx="4"/><rect class="chair-dark" x="436" y="370" width="20" height="172" rx="4"/><rect class="chair" x="440" y="190" width="26" height="182" rx="8"/><rect class="chair" x="246" y="352" width="226" height="28" rx="8"/><text class="label" x="345" y="374" text-anchor="middle" style="font-size:22px">СТУЛ</text>',
+    front:'', zones:{na:[236,180,438,352], pod:[272,385,440,560]}, pos:{na:[340,308], pod:[356,500]}},
+  box:{kind:"container", acc:"коробку", loc:"коробке", ins:"коробкой", gen:"коробки",
+    back:'<rect class="box-back" x="640" y="390" width="190" height="60" rx="4"/><rect class="box-in" x="652" y="398" width="166" height="40" rx="3"/>',
+    front:'<polygon class="box-edge" points="640,430 830,430 850,412 620,412"/><rect class="box-front" x="640" y="430" width="190" height="112" rx="4"/><text class="label" x="735" y="498" text-anchor="middle">КОРОБКА</text>',
+    zones:CONT_ZONES, pos:{v:[735,425], ryadom:[920,495]}},
+  basket:{kind:"container", acc:"корзину", loc:"корзине", ins:"корзиной", gen:"корзины",
+    back:'<ellipse cx="735" cy="420" rx="100" ry="22" fill="#8D5A2B"/><ellipse cx="735" cy="420" rx="88" ry="15" fill="#5D3A1A"/>',
+    front:'<path d="M635,420 L657,542 L813,542 L835,420 Z" class="basket"/><path d="M641,446 H829 M651,522 H819" stroke="#B8793A" stroke-width="6"/><text class="label" x="735" y="494" text-anchor="middle" style="font-size:24px">КОРЗИНА</text>',
+    zones:CONT_ZONES, pos:{v:[735,412], ryadom:[920,495]}}
+};
+const SCENES = {A:["table","box"], B:["chair","basket"]};
+const RUG = '<ellipse class="rug" cx="110" cy="548" rx="92" ry="18"/>';
+const START = [110,500];
+
+/* prepositions: how the instruction and the answer are phrased */
+const PREPS = {
+  na:    {w:"НА",      kind:"surface",   word:p=>p.acc, ans:p=>"НА "+p.loc},
+  pod:   {w:"ПОД",     kind:"surface",   word:p=>p.acc, ans:p=>"ПОД "+p.ins},
+  v:     {w:"В",       kind:"container", word:p=>p.acc, ans:p=>"В "+p.loc},
+  ryadom:{w:"РЯДОМ С", kind:"container", word:p=>p.ins, ans:p=>"РЯДОМ С "+p.ins},
+  iz:    {w:"ИЗ",      kind:"container", word:p=>p.gen, ans:p=>"ИЗ "+p.gen, verb:"Достань"}
+};
+
+/* levels: content grows; hint stages live inside each level */
+const LEVELS = {
+  pred:[
+    {name:"НА и В", preps:["na","v"], scenes:["A"], objs:BASE4},
+    {name:"НА, В, ПОД", preps:["na","v","pod"], scenes:["A"], objs:BASE4},
+    {name:"Новые предметы и места", preps:["na","v","pod"], scenes:["A","B"], objs:ALL8},
+    {name:"+ РЯДОМ С и ИЗ", preps:["na","v","pod","ryadom","iz"], scenes:["A","B"], objs:ALL8}
+  ],
+  q:[
+    {name:"Что это?", main:"chto", mix:{chto:1}},
+    {name:"Где?", main:"gde", mix:{gde:.7, chto:.3}},
+    {name:"Кто это? (фото семьи)", main:"kto", mix:{kto:.6, gde:.2, chto:.2}},
+    {name:"Что делает? (фото семьи)", main:"delaet", mix:{delaet:.6, kto:.2, gde:.2}}
+  ]
+};
+const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?"};
+const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
+
+/* ================= state ================= */
+const DEF = {lvl:{pred:1,q:1}, st:{pred:1,q:1}, sound:true, rate:0.85, medals:0, log:[]};
+let S = JSON.parse(JSON.stringify(DEF));
+try{ const raw = localStorage.getItem("alan-cards-v2"); if(raw){ const d=JSON.parse(raw); S=Object.assign(S,d,{lvl:Object.assign({},DEF.lvl,d.lvl||{}), st:Object.assign({},DEF.st,d.st||{})}); }
+     else { const old = JSON.parse(localStorage.getItem("alan-cards-v1")||"null"); if(old){ S.sound=old.sound!==false; S.rate=old.rate||0.85; S.medals=old.medals||0; } } }catch(e){}
+let PHOTOS = [];
+try{ PHOTOS = JSON.parse(localStorage.getItem("alan-cards-photos")||"[]"); if(!Array.isArray(PHOTOS)) PHOTOS=[]; }catch(e){ PHOTOS=[]; }
+function save(){ try{ localStorage.setItem("alan-cards-v2", JSON.stringify(S)); }catch(e){} }
+function savePhotos(){ try{ localStorage.setItem("alan-cards-photos", JSON.stringify(PHOTOS)); return true; }catch(e){ return false; } }
+const run = {streak:{pred:0,q:0}, errs:{pred:0,q:0}, stars:0};
+
+/* ================= speech ================= */
+let voice=null;
+function pickVoice(){ try{ const vs=speechSynthesis.getVoices().filter(v=>/^ru/i.test(v.lang)); voice=vs.find(v=>/milena|katya|google/i.test(v.name))||vs[0]||null; }catch(e){} }
+if("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
+function say(t){ if(!t||!S.sound||!("speechSynthesis" in window)) return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t.toLowerCase()); u.lang="ru-RU"; u.rate=S.rate; if(voice) u.voice=voice; speechSynthesis.speak(u);}catch(e){} }
+
+/* ================= scene ================= */
+const scene=$("scene"), layerBack=$("layerBack"), layerTop=$("layerTop");
+let objEl=null, objPos=[0,0], objScale=1, zones=[];
+function buildScene(key){
+  zones=[];
+  if(!key){ $("sBack").innerHTML=""; $("sFront").innerHTML=""; $("sZones").innerHTML=""; return; }
+  const ps=PLACES[SCENES[key][0]], pc=PLACES[SCENES[key][1]];
+  $("sBack").innerHTML = RUG + ps.back + pc.back;
+  $("sFront").innerHTML = ps.front + pc.front;
+  [[ps,"na"],[ps,"pod"],[pc,"v"],[pc,"ryadom"]].forEach(([p,k])=>zones.push({key:k, place:p, rect:p.zones[k], pos:p.pos[k]}));
+  $("sZones").innerHTML = zones.map(z=>{ const [x1,y1,x2,y2]=z.rect; return `<rect class="zone" id="z-${z.key}" x="${x1+6}" y="${y1+6}" width="${x2-x1-12}" height="${y2-y1-12}" rx="18"/>`; }).join("");
+}
+function showZone(k){ zones.forEach(z=>{ const el=$("z-"+z.key); if(el) el.classList.toggle("show", z.key===k); }); }
+function zoneAt(x,y){ return zones.find(z=>{ const [x1,y1,x2,y2]=z.rect; return x>=x1&&x<=x2&&y>=y1&&y<=y2; }) || null; }
+function makeObj(inner, x, y, s, back){
+  if(objEl) objEl.remove();
+  objEl=document.createElementNS(NS,"g"); objEl.setAttribute("class","obj"); objEl.innerHTML=inner;
+  objScale=s||1; setPos(x,y); (back?layerBack:layerTop).appendChild(objEl);
+}
+function setPos(x,y){ objPos=[x,y]; objEl.setAttribute("transform",`translate(${x},${y}) scale(${objScale})`); }
+function tween(to, ms, done){
+  const el=objEl, from=objPos.slice(), t0=performance.now(), reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  (function step(now){ if(objEl!==el) return; const k=reduce?1:Math.min(1,Math.max(0,(now-t0)/ms)), e=1-Math.pow(1-k,3);
+    setPos(from[0]+(to[0]-from[0])*e, from[1]+(to[1]-from[1])*e); if(k<1) requestAnimationFrame(step); else done&&done(); })(t0);
+}
+function svgPoint(ev){ const p=scene.createSVGPoint(); p.x=ev.clientX; p.y=ev.clientY; return p.matrixTransform(scene.getScreenCTM().inverse()); }
+
+/* ================= screens ================= */
+let mode=null, cur=null, busy=false, revealed=false, timer=null;
+function later(fn,ms){ clearTimeout(timer); timer=setTimeout(fn,ms); }
+function lvlLabel(tr){ return `Уровень ${S.lvl[tr]}: ${LEVELS[tr][S.lvl[tr]-1].name}`; }
+function renderHome(){ $("pillPred").textContent=lvlLabel("pred"); $("pillQ").textContent=lvlLabel("q"); $("gearDot").hidden = !(readiness("pred").ready||readiness("q").ready); }
+function renderStars(){ $("stars").innerHTML=Array.from({length:5},(_,i)=>`<span class="${i<run.stars?"on":""}"></span>`).join(""); }
+function goHome(){ clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
+function start(m){ mode=m; cur=null; $("home").hidden=true; $("play").hidden=false; $("backBtn").hidden=false; $("hdrTitle").textContent = m==="pred"?"Куда положить?":"Вопросы"; renderStars(); nextTask(); }
+$("goPred").onclick=()=>start("pred"); $("goQ").onclick=()=>start("q"); $("backBtn").onclick=goHome;
+$("speakBtn").onclick=()=>{ if(cur&&cur.speech) say(cur.speech); };
+function setCard(html, state){ $("taskText").innerHTML=html; const t=$("task"); t.classList.remove("ok","err"); if(state) t.classList.add(state); }
+function hiddenCard(){ setCard(`<span class="muted">Слушай</span><button class="reveal" id="revealBtn">Показать текст</button>`); $("revealBtn").onclick=e=>{ e.stopPropagation(); revealed=true; cur.render(); }; }
+function logIt(tr, ty, task, ans, ok){ S.log.push({t:Date.now(), tr, ty, lvl:S.lvl[tr], st:S.st[tr], task, ans, ok}); if(S.log.length>800) S.log=S.log.slice(-800); save(); }
+
+/* ================= progress ================= */
+function win(tr){ run.errs[tr]=0; run.streak[tr]++; if(run.streak[tr]>=5 && S.st[tr]<3){ S.st[tr]++; run.streak[tr]=0; save(); } run.stars=Math.min(5,run.stars+1); renderStars(); }
+function lose(tr){ run.streak[tr]=0; run.errs[tr]++; if(run.errs[tr]>=2 && S.st[tr]>1){ S.st[tr]--; run.errs[tr]=0; save(); } }
+function afterWin(){ if(run.stars>=5){ S.medals++; save(); showReward(); } else nextTask(); }
+function readiness(tr){
+  const L=S.lvl[tr], main = tr==="pred"?"pred":LEVELS.q[L-1].main;
+  const rows=S.log.filter(l=>l.tr===tr && l.lvl===L && l.st===3 && l.ty===main).slice(-10);
+  const ok=rows.filter(r=>r.ok).length;
+  return {n:rows.length, ok, ready: rows.length===10 && ok>=8 && L<LEVELS[tr].length};
+}
+function showReward(){
+  $("rewardArt").innerHTML=OBJS.find(o=>o.id==="tank").svg;
+  $("rewardText").textContent=`Новый танк в коллекции. Всего танков: ${S.medals}.`;
+  $("reward").hidden=false; say("Молодец!");
+}
+$("rewardNext").onclick=()=>{ $("reward").hidden=true; run.stars=0; renderStars(); nextTask(); };
+
+/* ================= tasks ================= */
+function nextTask(repeat){ busy=false; revealed=false; $("need").hidden=true; if(mode==="pred") predTask(repeat); else qTask(repeat); }
+
+/* ---- prepositions ---- */
+function predTask(repeat){
+  $("answers").hidden=true;
+  const L=LEVELS.pred[S.lvl.pred-1];
+  if(!repeat || !cur || cur.kind!=="pred"){
+    let t, guard=0;
+    do{ t={pk:rnd(L.preps), sc:rnd(L.scenes), o:rnd(L.objs)}; guard++; }
+    while(guard<20 && cur && cur.kind==="pred" && cur.pk===t.pk && cur.o===t.o);
+    cur=Object.assign({kind:"pred"},t);
+  }
+  const P=PREPS[cur.pk], pair=SCENES[cur.sc], place=PLACES[P.kind==="surface"?pair[0]:pair[1]];
+  cur.place=place; cur.target = cur.pk==="iz" ? "v" : cur.pk;
+  cur.speech = `${P.verb||"Положи"} ${cur.o.acc} ${P.w} ${P.word(place)}`;
+  cur.render = state=>renderPredCard(state);
+  buildScene(cur.sc);
+  if(cur.pk==="iz") makeObj(cur.o.svg, place.pos.v[0], place.pos.v[1], 1, true);
+  else makeObj(cur.o.svg, START[0], START[1], 1, false);
+  bindDrag(); renderPredCard();
+  showZone(S.st.pred===1 && cur.pk!=="iz" ? cur.pk : null);
+  say(cur.speech);
+}
+function renderPredCard(state){
+  const P=PREPS[cur.pk];
+  if(S.st.pred===3 && !revealed && !state){ hiddenCard(); return; }
+  setCard(`<span>${P.verb||"Положи"}</span><span>${cur.o.acc}</span><span class="chip where">${P.w}</span><span>${P.word(cur.place)}</span>`, state);
+}
+function bindDrag(){
+  let off=null; const el=objEl;
+  el.addEventListener("pointerdown", ev=>{ if(busy||mode!=="pred") return; ev.preventDefault();
+    const p=svgPoint(ev); off=[p.x-objPos[0], p.y-objPos[1]]; el.classList.add("drag"); layerTop.appendChild(el);
+    try{ el.setPointerCapture(ev.pointerId); }catch(e){} });
+  el.addEventListener("pointermove", ev=>{ if(!off) return; const p=svgPoint(ev); setPos(Math.max(40,Math.min(960,p.x-off[0])), Math.max(40,Math.min(540,p.y-off[1]))); });
+  const end=()=>{ if(!off) return; off=null; el.classList.remove("drag"); dropped(); };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+}
+function putAt(z){ tween(z.pos, 250, ()=>{ if(z.key==="v") layerBack.appendChild(objEl); }); }
+function dropped(){
+  const z=zoneAt(objPos[0], objPos[1]), P=PREPS[cur.pk], place=cur.place, task=cur.speech;
+  if(cur.pk==="iz"){
+    if(z && z.key==="v"){ putAt(z); return; }               // put back inside: not an answer yet
+    busy=true; tween(START, 300); renderPredCard("ok");
+    say(P.ans(place)); logIt("pred","pred",task,"ИЗ",true); win("pred"); later(afterWin,1600); return;
+  }
+  if(!z){ tween(START, 300); return; }
+  busy=true;
+  const target=zones.find(x=>x.key===cur.target);
+  if(z.key===cur.target){
+    putAt(z); showZone(null); renderPredCard("ok");
+    say(`${cap(cur.o.nom)} ${P.ans(place)}`);
+    logIt("pred","pred",task,PREPS[z.key].w,true); win("pred"); later(afterWin,1700);
+  } else {
+    tween(z.pos, 200, ()=>{ if(z.key==="v") layerBack.appendChild(objEl);
+      setTimeout(()=>{ layerTop.appendChild(objEl); tween(target.pos, 700, ()=>{ if(target.key==="v") layerBack.appendChild(objEl); }); }, 450); });
+    renderPredCard("err"); showZone(cur.target);
+    say(`${P.w} ${P.word(place)}`);
+    logIt("pred","pred",task,PREPS[z.key].w,false); lose("pred"); later(()=>nextTask(true),2800);
+  }
+}
+
+/* ---- questions ---- */
+function pickType(mix){ const r=Math.random(); let acc=0; for(const k in mix){ acc+=mix[k]; if(r<=acc) return k; } return Object.keys(mix)[0]; }
+function peopleNames(){ return [...new Set(PHOTOS.map(p=>(p.name||"").trim().toLowerCase()).filter(Boolean))]; }
+function canDo(ty){ if(ty==="kto") return peopleNames().length>=2; if(ty==="delaet") return PHOTOS.some(p=>p.act&&p.act.trim()); return true; }
+function qTask(repeat){
+  const L=LEVELS.q[S.lvl.q-1];
+  if(!canDo(L.main)){ showNeed(); return; }
+  if(!repeat || !cur || cur.kind!=="q" || cur.ty==="need"){
+    let ty=pickType(L.mix); if(!canDo(ty)) ty=L.main;
+    cur={kind:"q", ty};
+    if(ty==="chto") cur.o=rnd(OBJS);
+    if(ty==="gde"){ cur.sc=rnd(["A","B"]); cur.pk=rnd(["na","pod","v"]); cur.o=rnd(OBJS); }
+    if(ty==="kto") cur.ph=rnd(PHOTOS.filter(p=>(p.name||"").trim()));
+    if(ty==="delaet") cur.ph=rnd(PHOTOS.filter(p=>p.act&&p.act.trim()));
+  }
+  showZone(null); $("answers").hidden=false;
+  const st=S.st.q, ty=cur.ty;
+  let chip, qtext, right, opts, cls, okSay;
+  if(ty==="chto"){
+    buildScene(null); makeObj(cur.o.svg, 500, 300, 2.6, false);
+    chip='<span class="chip what">ЧТО</span>'; qtext="это?"; cur.speech="Что это?"; cls="what";
+    right=cap(cur.o.nom); opts=[right, ...shuffle(OBJS.filter(o=>o!==cur.o)).slice(0, st===1?1:3).map(o=>cap(o.nom))];
+    okSay=`Это ${cur.o.nom}`;
+  } else if(ty==="gde"){
+    buildScene(cur.sc); const pair=SCENES[cur.sc], P=PREPS[cur.pk];
+    const placeOf=k=>PLACES[PREPS[k].kind==="surface"?pair[0]:pair[1]];
+    const z=zones.find(x=>x.key===cur.pk);
+    makeObj(cur.o.svg, z.pos[0], z.pos[1], 1, cur.pk==="v");
+    chip='<span class="chip where">ГДЕ</span>'; qtext=`${cur.o.nom}?`; cur.speech=`Где ${cur.o.nom}?`; cls="where";
+    right=P.ans(placeOf(cur.pk));
+    const others=["na","pod","v"].filter(k=>k!==cur.pk).map(k=>PREPS[k].ans(placeOf(k)));
+    opts=[right, ...shuffle(others).slice(0, st===1?1:2)]; okSay=`${cap(cur.o.nom)} ${right}`;
+  } else if(ty==="kto"){
+    buildScene(null); showPhoto(cur.ph.img);
+    chip='<span class="chip who">КТО</span>'; qtext="это?"; cur.speech="Кто это?"; cls="who";
+    const nm=cur.ph.name.trim().toLowerCase(); right=cap(nm);
+    opts=[right, ...shuffle(peopleNames().filter(n=>n!==nm)).slice(0, st===1?1:3).map(cap)]; okSay=`Это ${nm}`;
+  } else {
+    buildScene(null); showPhoto(cur.ph.img);
+    const who=(cur.ph.name||"").trim().toLowerCase()||"он";
+    chip='<span class="chip does">ЧТО ДЕЛАЕТ</span>'; qtext=`${who}?`; cur.speech=`Что делает ${who}?`; cls="does";
+    right=cur.ph.act.trim().toLowerCase();
+    const pool=[...new Set([...PHOTOS.map(p=>(p.act||"").trim().toLowerCase()).filter(Boolean), ...VERBS])].filter(v=>v!==right);
+    opts=[right, ...shuffle(pool).slice(0, st===1?1:2)]; okSay=`${cap(who)} ${right}`;
+  }
+  cur.right=right; cur.okSay=okSay;
+  cur.render = state=>{ if(st===3 && !revealed && !state){ hiddenCard(); return; } setCard(`${chip}<span>${esc(qtext)}</span>`, state); };
+  cur.render();
+  renderAnswers(shuffle(opts), cls);
+  say(cur.speech);
+}
+function showPhoto(src){
+  if(objEl) objEl.remove();
+  objEl=document.createElementNS(NS,"g");
+  objEl.innerHTML=`<defs><clipPath id="phclip"><rect x="320" y="60" width="360" height="460" rx="28"/></clipPath></defs><image href="${src}" x="320" y="60" width="360" height="460" preserveAspectRatio="xMidYMid slice" clip-path="url(#phclip)"/><rect x="320" y="60" width="360" height="460" rx="28" fill="none" stroke="#fff" stroke-width="8"/>`;
+  layerTop.appendChild(objEl);
+}
+function showNeed(){
+  buildScene(null); if(objEl){ objEl.remove(); objEl=null; } $("answers").hidden=true;
+  cur={kind:"q", ty:"need", speech:""};
+  setCard('<span class="muted">Нужны фото</span>');
+  $("need").textContent="Попроси маму или папу добавить фото семьи. Для этого уровня нужны фото людей с именами.";
+  $("need").hidden=false;
+}
+function renderAnswers(opts, cls){
+  const box=$("answers"); box.innerHTML="";
+  const ty=cur.ty, label=`${cur.speech} (${cur.right})`;
+  opts.forEach(text=>{
+    const b=document.createElement("button"); b.className="ans "+cls; b.textContent=text;
+    b.onclick=()=>{
+      if(busy) return; busy=true;
+      if(text===cur.right){
+        b.classList.add("right"); $("task").classList.add("ok"); say(cur.okSay);
+        logIt("q", ty, label, text, true); win("q"); later(afterWin,1600);
+      } else {
+        b.classList.add("wrong"); $("task").classList.add("err");
+        [...box.children].forEach(x=>{ if(x.textContent===cur.right) x.classList.add("hint"); });
+        say(ty==="gde"||ty==="delaet" ? cur.right : cur.okSay);
+        logIt("q", ty, label, text, false); lose("q"); later(()=>nextTask(true),2600);
+      }
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ================= parent area ================= */
+const gear=$("gearBtn"); let holdT=null;
+gear.addEventListener("pointerdown", e=>{ e.preventDefault(); gear.classList.add("holding"); holdT=setTimeout(()=>{ gear.classList.remove("holding"); openParent(); },1200); });
+["pointerup","pointerleave","pointercancel"].forEach(t=>gear.addEventListener(t, ()=>{ clearTimeout(holdT); gear.classList.remove("holding"); }));
+gear.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" ") openParent(); });
+$("parentClose").onclick=()=>{ $("parent").hidden=true; if(mode){ cur=null; nextTask(); } else renderHome(); };
+function openParent(){ clearTimeout(timer); try{speechSynthesis.cancel();}catch(e){} renderParent(); $("parent").hidden=false; }
+function seg(el, items, isOn, onTap){ el.innerHTML=""; items.forEach(it=>{ const b=document.createElement("button"); b.textContent=it.label; if(isOn(it.v)) b.classList.add("on"); b.onclick=()=>{ onTap(it.v); save(); renderParent(); }; el.appendChild(b); }); }
+function setLevel(tr, v){ S.lvl[tr]=v; S.st[tr]=1; run.streak[tr]=0; run.errs[tr]=0; }
+function renderTrack(tr){
+  const box=$(tr==="pred"?"trackPred":"trackQ"), title = tr==="pred"?"Куда положить? (предлоги)":"Вопросы";
+  const r=readiness(tr), L=S.lvl[tr], max=LEVELS[tr].length;
+  box.innerHTML=`<h3>${title}</h3>
+    <ol class="levels">${LEVELS[tr].map((l,i)=>`<li class="${i+1===L?"cur":""}">${esc(l.name)}</li>`).join("")}</ol>
+    <div class="row"><span class="lbl">Уровень</span><span class="seg" data-k="lvl"></span></div>
+    <div class="row"><span class="lbl">Ступень подсказок</span><span class="seg" data-k="st"></span></div>
+    <div class="ready ${r.ready?"go":""}">${
+      L>=max ? `<span>Это последний уровень. Следующие добавим позже.</span>` :
+      r.ready ? `<span>Готов к уровню ${L+1}: на ступени 3 верно <b>${r.ok} из 10</b>.</span><button class="primary" data-up>Перейти на уровень ${L+1}</button>` :
+      `<span>До уровня ${L+1}: на ступени 3 верно <b>${r.ok} из ${r.n}</b> последних (нужно 8 из 10).</span>`}</div>`;
+  seg(box.querySelector('[data-k="lvl"]'), LEVELS[tr].map((_,i)=>({label:String(i+1),v:i+1})), v=>S.lvl[tr]===v, v=>setLevel(tr,v));
+  seg(box.querySelector('[data-k="st"]'), [1,2,3].map(v=>({label:String(v),v})), v=>S.st[tr]===v, v=>{ S.st[tr]=v; run.streak[tr]=0; run.errs[tr]=0; });
+  const up=box.querySelector("[data-up]"); if(up) up.onclick=()=>{ setLevel(tr, L+1); save(); renderParent(); };
+}
+function renderPhotos(){
+  $("photoList").innerHTML = PHOTOS.length ? PHOTOS.map((p,i)=>`<div class="ph"><img src="${p.img}" alt="${esc(p.name)}"><div><span><b>${esc(p.name)}</b>${p.act?" · "+esc(p.act):""}</span><button data-del="${i}">Удалить</button></div></div>`).join("") : `<p class="hint-txt">Фото пока нет.</p>`;
+  $("photoList").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ PHOTOS.splice(+b.dataset.del,1); savePhotos(); renderParent(); });
+}
+$("phAdd").onclick=()=>{
+  const f=$("phFile").files[0], name=$("phName").value.trim(), act=$("phAct").value.trim(); $("phMsg").textContent="";
+  if(!f){ $("phMsg").textContent="Выберите фото."; return; }
+  if(!name){ $("phMsg").textContent="Напишите, кто на фото."; return; }
+  const img=new Image(), url=URL.createObjectURL(f);
+  img.onload=()=>{ const m=480, k=Math.min(1, m/Math.max(img.width,img.height)); const c=document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
+    PHOTOS.push({name, act, img:c.toDataURL("image/jpeg",0.8)});
+    if(!savePhotos()){ PHOTOS.pop(); $("phMsg").textContent="Не хватает места на устройстве. Удалите одно из старых фото."; return; }
+    $("phFile").value=""; $("phName").value=""; $("phAct").value=""; renderParent(); };
+  img.onerror=()=>{ URL.revokeObjectURL(url); $("phMsg").textContent="Не получилось открыть этот файл. Попробуйте другое фото."; };
+  img.src=url;
+};
+function renderParent(){
+  renderTrack("pred"); renderTrack("q"); renderPhotos();
+  seg($("soundSeg"), [{label:"Вкл",v:true},{label:"Выкл",v:false}], v=>S.sound===v, v=>{ S.sound=v; });
+  seg($("rateSeg"), [{label:"Медленно",v:0.7},{label:"Обычно",v:0.85},{label:"Быстрее",v:1}], v=>S.rate===v, v=>{ S.rate=v; say("Положи мяч на стол"); });
+  const last=a=>a.slice(-20), rows=[];
+  ["na","v","pod","ryadom","iz"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty==="pred" && (" "+l.task+" ").includes(" "+PREPS[k].w+" "))); rows.push({n:`Предлог ${PREPS[k].w}`, a}); });
+  ["chto","gde","kto","delaet"].forEach(k=>rows.push({n:TYPE_NAMES[k], a:last(S.log.filter(l=>l.ty===k))}));
+  $("stats").innerHTML=rows.map(r=>`<div class="stat"><b>${r.a.length? r.a.filter(x=>x.ok).length+" из "+r.a.length : "—"}</b><div>${r.n}</div></div>`).join("");
+  const fmt=t=>{ const d=new Date(t); return d.toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}); };
+  const log=S.log.slice(-60).reverse();
+  $("logBody").innerHTML = log.length ? log.map(l=>`<tr><td>${fmt(l.t)}</td><td>${esc(l.task)}</td><td>${esc(l.ans)}</td><td class="${l.ok?"y":"n"}">${l.ok?"верно":"ошибка"}</td><td>${l.lvl}</td><td>${l.st}</td></tr>`).join("") : `<tr><td colspan="6">Пока пусто. Здесь появятся задания, как только Алан начнет заниматься.</td></tr>`;
+  const cr=$("clearRow"); cr.innerHTML=`<button class="ghost danger" id="clearBtn">Очистить журнал</button>`;
+  $("clearBtn").onclick=()=>{ cr.innerHTML=`<span>Удалить все записи журнала?</span><button class="ghost danger" id="clrYes">Да, удалить</button><button class="ghost" id="clrNo">Нет</button>`;
+    $("clrYes").onclick=()=>{ S.log=[]; save(); renderParent(); }; $("clrNo").onclick=renderParent; };
+}
+
+renderStars(); renderHome();
+})();
+</script>
+
+</body>
+</html>
