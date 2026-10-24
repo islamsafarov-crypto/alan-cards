@@ -91,6 +91,25 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .ans.hint{border-color:var(--ok);border-style:dashed;border-width:4px}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
+/* splash */
+.splash{position:fixed;inset:0;z-index:50;background:var(--where);display:grid;place-items:center;transition:opacity .35s}
+.splash.out{opacity:0;pointer-events:none}
+.splash .sp{display:flex;flex-direction:column;align-items:center;gap:6px}
+.splash svg{width:min(42vw,220px);height:auto;overflow:visible}
+.splash .a-line{fill:transparent;stroke:#fff;stroke-width:5;stroke-linejoin:round;stroke-dasharray:520;stroke-dashoffset:520;animation:aDraw .5s ease-out forwards}
+.splash .a-fill{fill:#fff;fill-rule:evenodd;transform-origin:50% 100%;transform-box:fill-box;opacity:0;animation:aPop .45s cubic-bezier(.3,1.6,.5,1) .42s forwards}
+.splash .word{font-family:var(--display);font-weight:700;font-size:min(12vw,64px);color:#fff;letter-spacing:.04em;opacity:0;transform:translateY(12px);animation:wUp .35s ease-out .6s forwards}
+.splash .stripe{display:flex;gap:6px;height:10px}
+.splash .stripe i{display:block;width:0;border-radius:6px;animation:sGrow .35s ease-out forwards}
+.splash .stripe i:nth-child(1){background:#FFC800;animation-delay:.7s}
+.splash .stripe i:nth-child(2){background:#12A84A;animation-delay:.76s}
+.splash .stripe i:nth-child(3){background:#F57C00;animation-delay:.82s}
+.splash .stripe i:nth-child(4){background:#E91E63;animation-delay:.88s}
+@keyframes aDraw{to{stroke-dashoffset:0}}
+@keyframes aPop{0%{opacity:0;transform:scale(.6)}100%{opacity:1;transform:scale(1)}}
+@keyframes wUp{to{opacity:1;transform:none}}
+@keyframes sGrow{to{width:34px}}
+@media (prefers-reduced-motion:reduce){.splash .a-line{stroke-dashoffset:0}.splash .a-fill,.splash .word{opacity:1;transform:none}.splash .stripe i{width:34px}}
 /* ready screen */
 .ready-scr{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;min-height:0}
 .ready-scr .rt{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,48px);color:var(--tc)}
@@ -199,6 +218,14 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (max-width:520px){.speak{width:52px;height:52px}.slot{min-width:96px}}
 </style>
+
+<div class="splash" id="splash" aria-hidden="true">
+  <div class="sp">
+    <svg viewBox="0 0 100 120"><path class="a-fill" d="M50,8 L92,112 L70,112 L62,90 L38,90 L30,112 L8,112 Z M40,76 L60,76 L50,49 Z"/><path class="a-line" d="M50,8 L92,112 L70,112 L62,90 L38,90 L30,112 L8,112 Z M40,76 L60,76 L50,49 Z"/></svg>
+    <div class="word">Alan</div>
+    <div class="stripe"><i></i><i></i><i></i><i></i></div>
+  </div>
+</div>
 
 </head>
 <body>
@@ -1184,6 +1211,8 @@ function renderParent(){ renderResetRow();
 }
 
 renderStars(); renderHome();
+(function(){ const sp=$("splash"); let gone=false; const hide=()=>{ if(gone) return; gone=true; sp.classList.add("out"); setTimeout(()=>sp.remove(),400); };
+  sp.addEventListener("pointerdown", hide); setTimeout(hide, matchMedia("(prefers-reduced-motion: reduce)").matches ? 500 : 1300); })();
 window.__alan = {TRACKS, S, makeActScene, STORIES, FRAMES, OBJS, DAY_ITEMS, start, nextTask};
 })();
 </script>
