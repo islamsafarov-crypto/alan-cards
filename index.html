@@ -87,6 +87,15 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .ans.hint{border-color:var(--ok);border-style:dashed;border-width:4px}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
+/* ready screen */
+.ready-scr{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;min-height:0}
+.ready-scr .rt{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,48px);color:var(--tc)}
+.ready-scr .rq{font-family:var(--display);font-weight:700;font-size:clamp(56px,11vw,110px);line-height:1}
+.ready-scr .rbtns{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+.ready-scr .rb{min-width:180px;padding:22px 40px;border-radius:24px;font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,44px);border:4px solid}
+.ready-scr .yes{background:var(--ok);border-color:var(--ok);color:#fff}
+.ready-scr .no{background:var(--card);border-color:var(--line);color:var(--muted)}
+.flyer{position:fixed;z-index:40;margin:0;pointer-events:none;box-sizing:border-box}
 /* sentence builder */
 .build{display:flex;flex-direction:column;gap:10px}
 .slots,.bank{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
@@ -204,6 +213,12 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
   </header>
 
   <section class="home" id="home"></section>
+  <section class="ready-scr" id="readyScr" hidden>
+    <div class="rt" id="rTitle"></div>
+    <span class="lvl-pill" id="rLvl"></span>
+    <div class="rq">Готов?</div>
+    <div class="rbtns"><button class="rb yes" id="rYes">Да</button><button class="rb no" id="rNo">Нет</button></div>
+  </section>
 
   <section class="play" id="play" hidden>
     <div class="task" id="task">
@@ -553,12 +568,40 @@ function renderHome(){
   h.innerHTML = TRACK_KEYS.map(k=>{ const T=TRACKS[k]; return `<button class="tile" data-go="${k}" style="--tc:${T.c};--tb:${T.b}"><svg class="tile-art" viewBox="0 0 300 64" preserveAspectRatio="xMinYMid meet" aria-hidden="true">${chipArt(T.chips)}</svg><h2>${T.title}</h2><span class="lvl-pill">${esc(lvlLabel(k))}</span><p>${T.sub}</p></button>`; }).join("")
     + `<button class="tile" data-tanks style="--tc:#3F7D3A;--tb:#EEF6EC"><svg class="tile-art" viewBox="-60 -40 120 80" preserveAspectRatio="xMinYMid meet" aria-hidden="true">${tankSvg("#5E7F4A")}</svg><h2>Мои танки</h2><span class="lvl-pill">Собрано: ${S.medals}</span><p>Танки за каждые 5 правильных ответов.</p></button>`
     + `<p class="home-note">Для родителей: удерживайте шестеренку, чтобы открыть уровни, распорядок дня, фото семьи и журнал.</p>`;
-  h.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>start(b.dataset.go));
+  h.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>launch(b.dataset.go, b));
   h.querySelector("[data-tanks]").onclick=openTanks;
   $("gearDot").hidden = !TRACK_KEYS.some(k=>readiness(k).ready);
 }
 function renderStars(){ $("stars").innerHTML=Array.from({length:5},(_,i)=>`<span class="${i<run.stars?"on":""}"></span>`).join(""); }
-function goHome(){ clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
+let launching=false;
+function launch(k, tile){
+  if(launching) return; launching=true;
+  const done=()=>{ launching=false; showReady(k); };
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce || !tile.animate){ done(); return; }
+  const r=tile.getBoundingClientRect(), fl=tile.cloneNode(true);
+  fl.classList.add("flyer"); Object.assign(fl.style,{left:r.left+"px", top:r.top+"px", width:r.width+"px", height:r.height+"px"});
+  document.body.appendChild(fl); tile.style.visibility="hidden";
+  const dx=innerWidth/2-(r.left+r.width/2), dy=innerHeight/2-(r.top+r.height/2);
+  const a=fl.animate([
+    {transform:"translate(0,0) scale(1)", boxShadow:"0 0 0 rgba(0,0,0,0)", opacity:1, offset:0},
+    {transform:"translate(0,-14px) scale(1.06)", boxShadow:"0 22px 40px rgba(22,33,43,.35)", opacity:1, offset:.32},
+    {transform:"translate(0,-14px) scale(1.06)", boxShadow:"0 22px 40px rgba(22,33,43,.35)", opacity:1, offset:.45},
+    {transform:`translate(${dx*.8}px,${dy*.8}px) scale(2.8)`, boxShadow:"0 50px 70px rgba(22,33,43,.3)", opacity:1, offset:.82},
+    {transform:`translate(${dx}px,${dy}px) scale(4.4)`, boxShadow:"0 60px 80px rgba(22,33,43,.2)", opacity:0, offset:1}
+  ], {duration:1350, easing:"ease-in-out", fill:"forwards"});
+  a.onfinish=()=>{ fl.remove(); tile.style.visibility=""; done(); };
+  a.oncancel=a.onfinish;
+}
+function showReady(k){
+  mode=null; $("home").hidden=true; $("play").hidden=true; $("readyScr").hidden=false; $("backBtn").hidden=false;
+  const T=TRACKS[k]; $("readyScr").style.setProperty("--tc", T.c);
+  $("rTitle").textContent=T.title; $("rLvl").textContent=lvlLabel(k); $("hdrTitle").textContent=T.title;
+  $("rYes").onclick=()=>{ $("readyScr").hidden=true; start(k); };
+  $("rNo").onclick=goHome;
+  say("Готов?");
+}
+function goHome(){ $("readyScr").hidden=true; clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
 function start(m){ mode=m; cur=null; $("home").hidden=true; $("play").hidden=false; $("backBtn").hidden=false; $("hdrTitle").textContent=TRACKS[m].title; renderStars(); nextTask(); }
 $("backBtn").onclick=goHome;
 $("speakBtn").onclick=()=>{ if(cur&&cur.speech) say(cur.speech); };
