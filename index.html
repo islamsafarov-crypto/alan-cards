@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Alan">
@@ -31,6 +31,8 @@
 }
 [hidden]{display:none!important}
 html,body{height:100%}
+*{touch-action:manipulation}
+input,select,textarea{font-size:16px}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);margin:0;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none}
 button:focus-visible,input:focus-visible{outline:3px solid var(--where);outline-offset:3px}
@@ -1477,6 +1479,10 @@ renderStars(); renderHome();
   sp.addEventListener("pointerdown", hide); setTimeout(hide, matchMedia("(prefers-reduced-motion: reduce)").matches ? 500 : 1300); })();
 window.__alan = {showReward:()=>showReward(), TRACKS, S, makeActScene, STORIES, FRAMES, OBJS, DAY_ITEMS, start, nextTask};
 })();
+
+/* no zoom: block pinch (iOS gesture events) */
+["gesturestart","gesturechange","gestureend"].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+document.addEventListener("touchmove",e=>{ if(e.touches.length>1) e.preventDefault(); },{passive:false});
 </script>
 
 </body>
