@@ -1193,10 +1193,9 @@ function sayTask(){
   cur.render=state=>setCard(`<span class="chip" style="background:#7E57C2">СКАЖИ</span><span>${esc(q)}</span>`, state);
   cur.render(); showArea("judge");
   const shown = st===1 ? answer : (st===2 ? answer.split(" ")[0]+" …" : "");
-  $("judge").innerHTML=`<div class="model ${shown?"":"empty"}" id="model">${shown?esc(shown):"Ответ скрыт. Нажмите «Подсказка», если нужно."}</div>
+  $("judge").innerHTML=`<div class="model ${shown?"":"empty"}" id="model">${shown?esc(shown):"Ответ скрыт."}</div>
     <div class="microw"><button class="mic" id="jMic" aria-label="Ответить голосом"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button><span class="heard" id="jHeard">${SR?"Нажми на микрофон и скажи ответ.":"Голосовой ответ работает в Safari, в версии приложения с GitHub."}</span></div>
-    <div class="jrow"><button class="jbtn hintb" id="jHint">Подсказка</button><button class="jbtn self" id="jSelf">Сказал сам</button><button class="jbtn help" id="jHelp">С подсказкой</button><button class="jbtn" id="jNo">Не сказал</button></div>`;
-  $("jHint").onclick=()=>{ $("model").textContent=answer; $("model").classList.remove("empty"); say(answer); };
+    <div class="jrow"><button class="jbtn self" id="jSelf">Сказал сам</button><button class="jbtn help" id="jHelp">С подсказкой</button><button class="jbtn" id="jNo">Не сказал</button></div>`;
   const done=(kind)=>{ if(busy) return; busy=true; $("model").textContent=answer; $("model").classList.remove("empty");
     const ok=kind==="self"; cur.render(ok?"ok":(kind==="no"?"err":null)); say(answer); if(ok) onRightFx($("jSelf")); else sfx("tap");
     logIt("say","say",`${q} → ${answer}`, cur.voice ? `голосом: «${cur.voice}»` : ({self:"сам",help:"с подсказкой",no:"не сказал"})[kind], ok);
