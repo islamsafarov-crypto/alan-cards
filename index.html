@@ -189,6 +189,10 @@ body.calm .wag,body.calm .zzz,body.calm .eyes,body.calm .m-body{animation:none!i
 .jbtn{border-radius:16px;padding:14px 8px;font-weight:800;font-size:18px;border:3px solid var(--line);background:var(--card)}
 .jbtn.self{border-color:var(--ok);background:var(--ok-soft)}
 .jbtn.help{border-color:var(--does);background:var(--does-soft)}
+.jbtn{position:relative;overflow:hidden}
+.jbtn.hold::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.12);transform-origin:left;transform:scaleX(0)}
+.jbtn.hold.holding::before{transition:transform 1s linear;transform:scaleX(1)}
+.jnote{grid-column:1/-1;text-align:center;font-size:14px;color:var(--muted);margin:-4px 0 0}
 .jbtn.hintb{border-color:var(--where);background:var(--where-soft)}
 
 .wall{fill:var(--wall)} .floor{fill:var(--floor)} .rug{fill:var(--rug)}
@@ -1182,6 +1186,11 @@ function listen(onText, onFail){
   r.onend=()=>{ if(!got) onFail("no-speech"); };
   try{ r.start(); }catch(e){ onFail("start"); }
 }
+/* parent-only buttons: fire after a 1-second hold, a quick tap does nothing */
+function holdBtn(b, fn){ let t=null; b.classList.add("hold");
+  b.addEventListener("pointerdown", e=>{ e.preventDefault(); if(busy) return; b.classList.add("holding"); t=setTimeout(()=>{ b.classList.remove("holding"); t=null; fn(); },1000); });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev, ()=>{ clearTimeout(t); t=null; b.classList.remove("holding"); }));
+  b.addEventListener("contextmenu", e=>e.preventDefault()); }
 function sayTask(){
   const L=TRACKS.say.levels[S.lvl.say-1], st=S.st.say; let answer, q;
   cur={kind:"say", ty:"say"};
@@ -1195,12 +1204,12 @@ function sayTask(){
   const shown = st===1 ? answer : (st===2 ? answer.split(" ")[0]+" …" : "");
   $("judge").innerHTML=`<div class="model ${shown?"":"empty"}" id="model">${shown?esc(shown):"Ответ скрыт."}</div>
     <div class="microw"><button class="mic" id="jMic" aria-label="Ответить голосом"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button><span class="heard" id="jHeard">${SR?"Нажми на микрофон и скажи ответ.":"Голосовой ответ работает в Safari, в версии приложения с GitHub."}</span></div>
-    <div class="jrow"><button class="jbtn self" id="jSelf">Сказал сам</button><button class="jbtn help" id="jHelp">С подсказкой</button><button class="jbtn" id="jNo">Не сказал</button></div>`;
+    <div class="jrow"><p class="jnote">Для родителей: удерживайте кнопку</p><button class="jbtn self" id="jSelf">Сказал сам</button><button class="jbtn help" id="jHelp">С подсказкой</button><button class="jbtn" id="jNo">Не сказал</button></div>`;
   const done=(kind)=>{ if(busy) return; busy=true; $("model").textContent=answer; $("model").classList.remove("empty");
     const ok=kind==="self"; cur.render(ok?"ok":(kind==="no"?"err":null)); say(answer); if(ok) onRightFx($("jSelf")); else sfx("tap");
     logIt("say","say",`${q} → ${answer}`, cur.voice ? `голосом: «${cur.voice}»` : ({self:"сам",help:"с подсказкой",no:"не сказал"})[kind], ok);
     if(ok){ win("say"); later(afterWin,2000); } else { if(kind==="no") lose("say"); else neutral("say"); later(()=>nextTask(),2200); } };
-  $("jSelf").onclick=()=>done("self"); $("jHelp").onclick=()=>done("help"); $("jNo").onclick=()=>done("no");
+  [["jSelf","self"],["jHelp","help"],["jNo","no"]].forEach(([id,k])=>holdBtn($(id), ()=>done(k)));
   const mic=$("jMic"), heard=$("jHeard");
   mic.onclick=()=>{ if(busy) return;
     if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
