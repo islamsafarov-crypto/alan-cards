@@ -202,6 +202,8 @@ body.calm .wag,body.calm .zzz,body.calm .eyes,body.calm .m-body{animation:none!i
 .zone.show{opacity:1;animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{50%{fill:rgba(21,101,255,.30)}}
 .obj{cursor:grab} .obj.drag{cursor:grabbing}
+.obj.sel .inner{filter:drop-shadow(0 0 10px #FFC107) drop-shadow(0 0 4px #FF9800);animation:selpulse .9s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes selpulse{50%{transform:scale(1.12)}}
 
 .overlay{position:fixed;inset:0;background:rgba(22,33,43,.45);display:grid;place-items:center;padding:16px;z-index:20}
 .sheet{background:var(--card);border-radius:24px;padding:24px;max-width:560px;width:100%;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
@@ -541,7 +543,7 @@ function worldOn(w){ return !S.worlds || S.worlds[w]!==false; }
 function scenePool(roomScenes){ const out=[]; Object.keys(WORLDS).forEach(w=>{ if(!worldOn(w)) return; if(w==="room") out.push(...roomScenes); else out.push(...WORLDS[w].scenes); }); return out.length?out:roomScenes; }
 function objsFor(sc, roomObjs){ const w=SCENE_WORLD[sc]; return w==="room" ? roomObjs : WORLDS[w].objs; }
 const RUG = '<ellipse class="rug" cx="120" cy="548" rx="100" ry="18"/>';
-const START1 = [[120,500]], START2 = [[75,500],[170,500]];
+const START1 = [[120,500]], START2 = [[70,500],[190,500]];
 const PREPS = {
   na:    {w:"НА",      kind:"surface",   word:p=>p.acc, ans:p=>"НА "+p.loc},
   pod:   {w:"ПОД",     kind:"surface",   word:p=>p.acc, ans:p=>"ПОД "+p.ins},
@@ -744,7 +746,7 @@ function onWrongFx(){ sfx("err"); mascot("oops","Смотри!"); }
 const scene=$("scene"), layerBack=$("layerBack"), layerTop=$("layerTop");
 let items=[], zones=[];
 function room(on){ $("wallR").style.display=on?"":"none"; $("floorR").style.display=on?"":"none"; }
-function clearScene(){ items.forEach(it=>it.el.remove()); items=[]; zones=[]; ["sBg","sBack","sFront","sZones"].forEach(id=>$(id).innerHTML=""); room(true); $("panel").hidden=true; }
+function clearScene(){ selStep=null; dragId=null; items.forEach(it=>it.el.remove()); items=[]; zones=[]; ["sBg","sBack","sFront","sZones"].forEach(id=>$(id).innerHTML=""); room(true); $("panel").hidden=true; }
 function buildScene(key){
   clearScene(); if(!key) return;
   const ps=PLACES[SCENES[key][0]], pc=PLACES[SCENES[key][1]], W=WORLDS[SCENE_WORLD[key]];
@@ -755,6 +757,8 @@ function buildScene(key){
   $("sZones").innerHTML = zones.map(z=>{ const [x1,y1,x2,y2]=z.rect; return `<rect class="zone" id="z-${z.key}" x="${x1+6}" y="${y1+6}" width="${x2-x1-12}" height="${y2-y1-12}" rx="18"/>`; }).join("");
 }
 function showZones(keys){ zones.forEach(z=>{ const el=$("z-"+z.key); if(el) el.classList.toggle("show", keys.includes(z.key)); }); }
+function zoneNear(x,y,r){ const z=zoneAt(x,y); if(z) return z; let best=null, bd=r;
+  zones.forEach(q=>{ const [x1,y1,x2,y2]=q.rect, dx=Math.max(x1-x,0,x-x2), dy=Math.max(y1-y,0,y-y2), d=Math.hypot(dx,dy); if(d<bd){ bd=d; best=q; } }); return best; }
 function zoneAt(x,y){ return zones.find(z=>{ const [x1,y1,x2,y2]=z.rect; return x>=x1&&x<=x2&&y>=y1&&y<=y2; }) || null; }
 function addItem(inner, x, y, s, back){
   const el=document.createElementNS(NS,"g"); el.setAttribute("class","obj"); el.innerHTML=`<g class="inner">${inner}</g>`;
@@ -956,20 +960,36 @@ function predTask(repeat){
   showZones(st===1 ? cur.steps.filter(s=>s.pk!=="iz").map(s=>s.target) : []);
   say(cur.speech);
 }
+/* Drag OR tap-to-place: tap an object (it glows), then tap where it should go.
+   Big invisible hit area, one finger at a time, lenient drop near a zone. */
+let selStep=null, dragId=null;
+function selectStep(s){ if(selStep && selStep.item) selStep.item.el.classList.remove("sel"); selStep=s; if(s) s.item.el.classList.add("sel"); }
 function bindDrag(s){
   let off=null, from=null, wasBack=false; const it=s.item, el=it.el;
-  el.addEventListener("pointerdown", ev=>{ if(busy||s.done||mode!=="pred") return; ev.preventDefault();
+  const hit=document.createElementNS(NS,"circle"); hit.setAttribute("r","58"); hit.setAttribute("fill","#000"); hit.setAttribute("fill-opacity","0"); el.insertBefore(hit, el.firstChild);
+  el.addEventListener("pointerdown", ev=>{ if(busy||s.done||mode!=="pred") return; ev.preventDefault(); ev.stopPropagation();
+    if(dragId!==null) return; dragId=ev.pointerId;
     const p=svgPoint(ev); off=[p.x-it.pos[0], p.y-it.pos[1]]; from=it.pos.slice(); wasBack=el.parentNode===layerBack; el.classList.add("drag"); layerTop.appendChild(el);
     try{ el.setPointerCapture(ev.pointerId); }catch(e){} });
-  el.addEventListener("pointermove", ev=>{ if(!off) return; const p=svgPoint(ev); setPos(it, Math.max(40,Math.min(960,p.x-off[0])), Math.max(40,Math.min(540,p.y-off[1]))); });
-  const end=()=>{ if(!off) return; off=null; el.classList.remove("drag");
-    if(Math.hypot(it.pos[0]-from[0], it.pos[1]-from[1])<8){ setPos(it, from[0], from[1]); if(wasBack) layerBack.appendChild(el); anim(el,"jiggle"); sfx("tap"); say(cap(s.o.nom)); return; }
-    dropped(s); };
+  el.addEventListener("pointermove", ev=>{ if(!off || ev.pointerId!==dragId) return; const p=svgPoint(ev); setPos(it, Math.max(40,Math.min(960,p.x-off[0])), Math.max(40,Math.min(540,p.y-off[1]))); });
+  const end=ev=>{ if(!off || ev.pointerId!==dragId) return; off=null; dragId=null; el.classList.remove("drag");
+    if(Math.hypot(it.pos[0]-from[0], it.pos[1]-from[1])<22){ setPos(it, from[0], from[1]); if(wasBack) layerBack.appendChild(el);
+      if(selStep===s){ selectStep(null); return; }
+      selectStep(s); sfx("tap"); say(cap(s.o.nom)); return; }
+    selectStep(null); dropped(s); };
   el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
 }
+/* tap on the scene while an object is selected: it flies there */
+scene.addEventListener("pointerdown", ev=>{
+  const s=selStep; if(!s || busy || s.done || mode!=="pred" || dragId!==null) return;
+  const p=svgPoint(ev), it=s.item; selectStep(null);
+  const z = s.pk==="iz" ? zoneAt(p.x,p.y) : zoneNear(p.x,p.y,70);
+  const to = z ? z.pos : [Math.max(40,Math.min(960,p.x)), Math.max(40,Math.min(540,p.y))];
+  layerTop.appendChild(it.el); tween(it, to, 380, ()=>dropped(s));
+});
 function putAt(it, z){ tween(it, z.pos, 250, ()=>{ if(z.key==="v") layerBack.appendChild(it.el); }); }
 function dropped(s){
-  const it=s.item, z=zoneAt(it.pos[0], it.pos[1]), P=PREPS[s.pk];
+  const it=s.item, z=(s.pk==="iz"?zoneAt:zoneNear)(it.pos[0], it.pos[1], 70), P=PREPS[s.pk];
   const finish=()=>{ if(cur.steps.every(x=>x.done)){ busy=true; showZones([]); cur.render("ok"); logIt("pred","pred",cur.speech,"верно",true); win("pred"); later(afterWin,1800); } };
   if(s.pk==="iz"){
     if(z && z.key==="v"){ putAt(it,z); return; }
