@@ -71,7 +71,7 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .speak svg{width:32px;height:32px}
 .reveal{font-family:var(--body);font-size:16px;font-weight:800;color:var(--where);padding:10px 14px;border-radius:12px;background:var(--where-soft)}
 .scene-wrap{flex:1;min-height:0;background:var(--card);border:2px solid var(--line);border-radius:22px;overflow:hidden;display:flex;position:relative}
-#scene{width:100%;height:100%;touch-action:none;display:block}
+#scene{width:100%;height:100%;touch-action:none;display:block;transform:translateZ(0)}
 .panel{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;background:var(--card);overflow:auto}
 .story{font-family:var(--display);font-weight:600;font-size:clamp(26px,4.4vw,44px);line-height:1.45;max-width:24ch;text-wrap:balance}
 .need{font-size:22px;font-weight:700;color:var(--muted);max-width:30ch}
@@ -185,7 +185,7 @@ body.calm .wag,body.calm .zzz,body.calm .eyes,body.calm .m-body{animation:none!i
 @keyframes micpulse{50%{transform:scale(1.08)}}
 .model mark{background:#FFD54F;color:inherit;border-radius:6px;padding:0 3px}
 .model .said{display:block;font-size:17px;font-family:inherit;font-weight:600;color:var(--muted);margin-top:4px}
-.heard{font-size:17px;font-weight:700;color:var(--muted);max-width:32ch;text-align:left}
+.heard{min-height:2.6em;display:flex;align-items:center;font-size:17px;font-weight:700;color:var(--muted);max-width:32ch;text-align:left}
 .jbtn{border-radius:16px;padding:14px 8px;font-weight:800;font-size:18px;border:3px solid var(--line);background:var(--card)}
 .jbtn.self{border-color:var(--ok);background:var(--ok-soft)}
 .jbtn.help{border-color:var(--does);background:var(--does-soft)}
@@ -1511,6 +1511,9 @@ window.__alan = {showReward:()=>showReward(), TRACKS, S, makeActScene, STORIES, 
 /* no zoom: block pinch (iOS gesture events) */
 ["gesturestart","gesturechange","gestureend"].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
 document.addEventListener("touchmove",e=>{ if(e.touches.length>1) e.preventDefault(); },{passive:false});
+
+/* Safari sometimes leaves a stale copy of the SVG picture after the layout shifts: force a repaint on resize */
+if(window.ResizeObserver){ new ResizeObserver(()=>{ scene.style.opacity="0.999"; requestAnimationFrame(()=>requestAnimationFrame(()=>{ scene.style.opacity=""; })); }).observe(scene); }
 </script>
 
 </body>
