@@ -113,6 +113,9 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .road .rtank.drive{animation:bump .2s 4 linear}
 @keyframes bump{50%{transform:translateY(-2px)}}
 /* mascot */
+.mascot.off{visibility:hidden}
+.story-hi{animation:storyhi 1s ease-in-out infinite}
+@keyframes storyhi{50%{stroke-opacity:.3}}
 .mascot{position:absolute;left:8px;top:8px;width:clamp(64px,9vw,90px);pointer-events:none;z-index:2}
 .mascot svg{width:100%;height:auto;display:block;overflow:visible}
 .m-body{animation:mbob 3s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
@@ -645,7 +648,8 @@ const TRACKS = {
       {name:"Назови предмет", kind:"name"},
       {name:"Где? (предлог + место)", kind:"where"},
       {name:"Кто что делает", kind:"act"},
-      {name:"Полное предложение", kind:"full"}
+      {name:"Полное предложение", kind:"full"},
+      {name:"Расскажи историю (3 картинки)", kind:"story"}
     ]},
   day:{title:"Мой день", c:"#00897B", b:"#E0F4F1", sub:"Что сейчас, что потом, когда.", chips:[["СЕЙЧАС","#00897B"],["ПОТОМ","#00897B"]],
     stages:"1 — два варианта (и подсказки на картинке); 2 — больше вариантов; 3 — вопрос только голосом.",
@@ -669,7 +673,7 @@ const TRACKS = {
 };
 const TRACK_KEYS = Object.keys(TRACKS);
 const mainType = (tr, L) => tr==="q" ? TRACKS.q.levels[L-1].main : tr;
-const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", day:"Мой день", read:"Читаем"};
+const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", storyQ:"История: вопрос", storyOrd:"История: порядок", day:"Мой день", read:"Читаем"};
 const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
 
 /* ================= state ================= */
@@ -899,7 +903,7 @@ function openTanks(){
 $("tanksClose").onclick=()=>{ $("tanks").hidden=true; };
 
 /* ================= common question flow ================= */
-function nextTask(repeat){ busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } ({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask})[mode](repeat); }
+function nextTask(repeat){ busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("off","m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } ({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask})[mode](repeat); }
 function present(cfg){ // cfg: {ty, html, speech, right, opts, cls, okSay, errSay, hide, fmt}
   Object.assign(cur, cfg);
   const st=S.st[mode];
@@ -1193,6 +1197,7 @@ function holdBtn(b, fn){ let t=null; b.classList.add("hold");
   b.addEventListener("contextmenu", e=>e.preventDefault()); }
 function sayTask(){
   const L=TRACKS.say.levels[S.lvl.say-1], st=S.st.say; let answer, q;
+  if(L.kind==="story"){ storyTask(); return; }
   cur={kind:"say", ty:"say"};
   if(L.kind==="name"){ const o=rnd(SCENE_OBJS); clearScene(); bigCenter(o.svg); answer=cap(o.nom); q="Что это?"; }
   else if(L.kind==="where"){ const sc=rnd(scenePool(["A","B"])), pk=rnd(["na","pod","v"]), o=rnd(objsFor(sc, SCENE_OBJS)); buildScene(sc); const z=zones.find(x=>x.key===pk); addItem(o.svg, z.pos[0], z.pos[1], 1, pk==="v"); answer=cap(gdePhrase(sc,pk)); q=`Где ${o.nom}?`; }
@@ -1231,6 +1236,234 @@ function sayTask(){
         : "Не расслышал. Нажми и скажи еще раз."; });
   };
   say(q);
+}
+
+/* ================= 5b. story retelling: 3 pictures → questions → order → retell ================= */
+const RAIN_LINES = Array.from({length:34},(_,i)=>{ const x=(i*61)%1000+10, y=150+((i*97)%300); return `<path d="M${x},${y} l-10,26"/>`; }).join("");
+const SBG = {
+  in:'<rect width="1000" height="600" fill="#FFF6DC"/><rect y="500" width="1000" height="100" fill="#EDB57C"/><rect y="496" width="1000" height="8" fill="#D9985A"/>',
+  out:'<rect width="1000" height="600" fill="#CDEBFF"/><circle cx="880" cy="95" r="52" fill="#FFD54F"/><rect y="490" width="1000" height="110" fill="#8BC34A"/>',
+  rain:`<rect width="1000" height="600" fill="#B8C4CC"/><rect y="490" width="1000" height="110" fill="#7CB342"/><g fill="#ECEFF1"><ellipse cx="280" cy="95" rx="130" ry="52"/><ellipse cx="390" cy="72" rx="95" ry="56"/><ellipse cx="720" cy="100" rx="140" ry="52"/></g><g stroke="#1E88E5" stroke-width="6" stroke-linecap="round">${RAIN_LINES}</g>`
+};
+const MOOD = {
+  smile:'<path d="M-16,18 Q0,34 16,18" stroke="#2B1D12" stroke-width="4.5" fill="none" stroke-linecap="round"/>',
+  laugh:'<path d="M-13,13 Q0,34 13,13Z" fill="#5D2A1A"/><text x="44" y="-50" font-family="Rubik,sans-serif" font-weight="800" font-size="30" fill="#E53935">ха-ха</text>',
+  cry:'<path d="M-15,-3 q-5,11 0,15 q5,-4 0,-15Z M15,-3 q-5,11 0,15 q5,-4 0,-15Z" fill="#42A5F5"/><path d="M-10,25 Q0,17 10,25" stroke="#2B1D12" stroke-width="3" fill="none" stroke-linecap="round"/>',
+  yawn:'<ellipse cx="0" cy="20" rx="8" ry="11" fill="#5D2A1A"/>',
+  see:'<text x="40" y="-56" font-family="Rubik,sans-serif" font-weight="800" font-size="60" fill="#E53935">!</text>'
+};
+const XOBJ = {bone:'<path d="M-30,-8 a11,11 0 1 1 6,-12 H24 a11,11 0 1 1 6,12 a11,11 0 1 1 -6,12 H-24 a11,11 0 1 1 -6,-12Z" fill="#FAF3E0" stroke="#CFC2A0" stroke-width="3"/>'};
+const anySvg = id => XOBJ[id] || (OBJ(id)||Object.values(WOBJS).flat().find(o=>o.id===id)).svg;
+function fig(id, o){ o=o||{}; const s=o.s||2, x=o.x||500, y=o.y!=null?o.y:((o.floor||500)-74*s);
+  let inner = o.act ? actorSvg({id}, o.act, o.obj) : charSvg(id, !!o.closed);
+  inner += (o.mood||[]).map(m=>MOOD[m]).join("");
+  return `<g transform="translate(${x},${y}) scale(${s})${o.rot?` rotate(${o.rot})`:""}">${inner}</g>`; }
+const ob = (id,x,y,s,rot) => `<g transform="translate(${x},${y}) scale(${s||1.2})${rot?` rotate(${rot})`:""}">${anySvg(id)}</g>`;
+const speed = (x,y) => `<path d="M${x},${y} h-70 M${x+6},${y+22} h-90 M${x},${y+44} h-60" stroke="#4A5A68" stroke-width="7" stroke-linecap="round"/>`;
+const block = (x,y,c,rot) => `<g transform="translate(${x},${y})${rot?` rotate(${rot})`:""}"><rect x="-40" y="-40" width="80" height="80" rx="8" fill="${c}" stroke="rgba(0,0,0,.2)" stroke-width="5"/></g>`;
+const sparkle = (x,y,s) => `<path transform="translate(${x},${y}) scale(${s||1})" d="M0,-24 L6,-6 L24,0 L6,6 L0,24 L-6,6 L-24,0 L-6,-6Z" fill="#FFD600"/>`;
+const HOUSE = '<rect x="760" y="330" width="200" height="160" fill="#FFCC80" stroke="#E0A060" stroke-width="5"/><polygon points="735,338 860,236 985,338" fill="#E53935"/><rect x="835" y="392" width="52" height="98" rx="4" fill="#8D6E63"/><rect x="778" y="358" width="42" height="40" fill="#BBDEFB" stroke="#E0A060" stroke-width="4"/>';
+const TOWER = block(650,460,"#E53935")+block(650,380,"#1E88E5")+block(650,300,"#FFC107");
+const ROLL = (x,y)=>`<path d="M${x-75},${y-30} q-22,30 0,60 M${x+75},${y-30} q22,30 0,60" stroke="#4A5A68" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+const out = h => SBG.out+h, inn = h => SBG.in+h, rain = h => SBG.rain+h;
+/* [title, frames: [line, who, does, art]] — who/does answer «Кто?» and «Что делает?» */
+const STORY3 = [
+ ["Кот и мяч", [
+   ["Кот видит мяч","Кот","видит мяч", inn(fig("cat",{x:320,mood:["see"]})+ob("ball",720,440,1.5))],
+   ["Кот играет с мячом","Кот","играет с мячом", inn(fig("cat",{x:400,rot:-8,mood:["smile"]})+ob("ball",610,420,1.2)+ROLL(610,420))],
+   ["Кот спит","Кот","спит", inn(fig("cat",{x:430,act:"spit"})+ob("ball",760,452,1.1))]]],
+ ["Собака гуляет", [
+   ["Собака бежит","Собака","бежит", out(fig("dog",{x:520,act:"begaet",floor:490}))],
+   ["Собака пьет воду","Собака","пьет воду", out(fig("dog",{x:480,act:"pyet",obj:"water",floor:490}))],
+   ["Собака спит","Собака","спит", inn(fig("dog",{x:480,act:"spit"}))]]],
+ ["Мишка и яблоко", [
+   ["Мишка видит яблоко","Мишка","видит яблоко", inn(fig("bear",{x:320,mood:["see"]})+ob("apple",720,440,1.5))],
+   ["Мишка ест яблоко","Мишка","ест яблоко", inn(fig("bear",{x:480,act:"est",obj:"apple"}))],
+   ["Мишка улыбается","Мишка","улыбается", inn(fig("bear",{x:480,mood:["smile"]}))]]],
+ ["Кот и башня", [
+   ["Кот строит башню","Кот","строит башню", inn(fig("cat",{x:330,mood:["smile"]})+TOWER)],
+   ["Башня падает","Башня","падает", inn(fig("cat",{x:300,mood:["see"]})+block(640,460,"#E53935")+block(700,330,"#1E88E5",25)+block(780,220,"#FFC107",-35)+'<path d="M600,250 q40,-50 90,-40 M760,150 q40,-20 70,10" stroke="#4A5A68" stroke-width="6" fill="none" stroke-linecap="round"/>')],
+   ["Кот плачет","Кот","плачет", inn(fig("cat",{x:400,mood:["cry"]})+block(640,460,"#E53935",12)+block(740,460,"#1E88E5",-8)+block(850,462,"#FFC107",20))]]],
+ ["Мишка и книга", [
+   ["Мишка читает книгу","Мишка","читает книгу", inn(fig("bear",{x:480,act:"chitaet",obj:"book"}))],
+   ["Мишка зевает","Мишка","зевает", inn(fig("bear",{x:430,mood:["yawn"]})+ob("book",720,465,.9))],
+   ["Мишка спит","Мишка","спит", inn(fig("bear",{x:430,act:"spit"})+ob("book",720,465,.9))]]],
+ ["Собака и конфета", [
+   ["Собака видит конфету","Собака","видит конфету", inn(fig("dog",{x:320,mood:["see"]})+ob("candy",720,440,1.5))],
+   ["Собака ест конфету","Собака","ест конфету", inn(fig("dog",{x:480,act:"est",obj:"candy"}))],
+   ["Собака улыбается","Собака","улыбается", inn(fig("dog",{x:480,mood:["smile"]}))]]],
+ ["Кот и молоко", [
+   ["Кот видит молоко","Кот","видит молоко", inn(fig("cat",{x:320,mood:["see"]})+ob("milk",720,440,1.5))],
+   ["Кот пьет молоко","Кот","пьет молоко", inn(fig("cat",{x:480,act:"pyet",obj:"milk"}))],
+   ["Кот улыбается","Кот","улыбается", inn(fig("cat",{x:480,mood:["smile"]}))]]],
+ ["Мишка и машинка", [
+   ["Мишка катает машинку","Мишка","катает машинку", inn(fig("bear",{x:440,act:"kataet",obj:"car"}))],
+   ["Машинка едет","Машинка","едет", inn(ob("car",560,440,2)+speed(430,410))],
+   ["Мишка бежит за машинкой","Мишка","бежит за машинкой", inn(fig("bear",{x:330,act:"begaet"})+ob("car",770,456,1.3)+speed(690,430))]]],
+ ["Собака и дождь", [
+   ["Собака гуляет","Собака","гуляет", out(fig("dog",{x:450,mood:["smile"],floor:490}))],
+   ["Идет дождь","Дождь","идет", rain(fig("dog",{x:450,mood:["see"],floor:490}))],
+   ["Собака бежит домой","Собака","бежит домой", rain(fig("dog",{x:400,act:"begaet",floor:490})+HOUSE)]]],
+ ["Солдатик и танк", [
+   ["Солдатик моет танк","Солдатик","моет танк", out(ob("tank",600,394,3)+ob("soldier",260,400,2.2)+'<g fill="#42A5F5"><path d="M380,300 q-8,16 0,22 q8,-6 0,-22Z"/><path d="M420,250 q-8,16 0,22 q8,-6 0,-22Z"/><path d="M450,330 q-8,16 0,22 q8,-6 0,-22Z"/></g><rect x="150" y="430" width="70" height="60" rx="8" fill="#1E88E5"/>')],
+   ["Танк блестит","Танк","блестит", out(ob("tank",520,394,3)+sparkle(380,290,1.6)+sparkle(640,250,1.2)+sparkle(700,380,1.5)+sparkle(450,420,1))],
+   ["Солдатик едет на танке","Солдатик","едет на танке", out(ob("tank",560,394,3)+ob("soldier",500,248,1.7)+speed(390,380))]]],
+ ["Собака и кость", [
+   ["Собака видит кость","Собака","видит кость", inn(fig("dog",{x:320,mood:["see"]})+ob("bone",720,450,1.6))],
+   ["Собака грызет кость","Собака","грызет кость", inn(fig("dog",{x:470})+ob("bone",560,402,1.1,-20))],
+   ["Собака спит","Собака","спит", inn(fig("dog",{x:430,act:"spit"})+ob("bone",740,470,1.1))]]],
+ ["Мишка и банан", [
+   ["Мишка видит банан","Мишка","видит банан", inn(fig("bear",{x:320,mood:["see"]})+ob("banana",720,444,1.5))],
+   ["Мишка ест банан","Мишка","ест банан", inn(fig("bear",{x:480,act:"est",obj:"banana"}))],
+   ["Мишка смеется","Мишка","смеется", inn(fig("bear",{x:450,mood:["laugh"]}))]]],
+ ["Кот и книга", [
+   ["Кот читает книгу","Кот","читает книгу", inn(fig("cat",{x:480,act:"chitaet",obj:"book"}))],
+   ["Кот зевает","Кот","зевает", inn(fig("cat",{x:430,mood:["yawn"]})+ob("book",720,465,.9))],
+   ["Кот спит","Кот","спит", inn(fig("cat",{x:430,act:"spit"})+ob("book",720,465,.9))]]],
+ ["Собака и мяч", [
+   ["Собака катает мяч","Собака","катает мяч", inn(fig("dog",{x:440,act:"kataet",obj:"ball"}))],
+   ["Мяч катится","Мяч","катится", inn(ob("ball",600,440,1.5)+speed(500,410))],
+   ["Собака бежит за мячом","Собака","бежит за мячом", inn(fig("dog",{x:330,act:"begaet"})+ob("ball",780,452,1.2)+speed(700,430))]]],
+ ["Мишка и дождь", [
+   ["Мишка гуляет","Мишка","гуляет", out(fig("bear",{x:450,mood:["smile"],floor:490}))],
+   ["Идет дождь","Дождь","идет", rain(fig("bear",{x:450,mood:["see"],floor:490}))],
+   ["Мишка бежит домой","Мишка","бежит домой", rain(fig("bear",{x:400,act:"begaet",floor:490})+HOUSE)]]]
+].map(([title, fr])=>({title, frames:fr.map(([line,who,does,art])=>({line, who, does, art}))}));
+const CONN = ["Сначала","Потом","В конце"], ASK = ["Что было сначала?","А что было потом?","А что было в конце?"];
+function svgLines(t, x, y, size, color, max){ const w=t.split(" "), L=[""]; w.forEach(x=>{ const c=L[L.length-1]; if(c && (c+" "+x).length>max) L.push(x); else L[L.length-1]=c?c+" "+x:x; });
+  return `<text x="${x}" y="${y}" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="700" font-size="${size}" fill="${color}">${L.map((l,i)=>`<tspan x="${x}" dy="${i?size*1.15:0}">${esc(l)}</tspan>`).join("")}</text>`; }
+const lowFirst = s => s.charAt(0).toLowerCase()+s.slice(1);
+const storyText = st => st.frames.map((f,i)=>`${CONN[i]} ${lowFirst(f.line)}.`).join(" ");
+const frameKeys = f => normW(f.does).filter(w=>!PREP_W.includes(w));
+/* did the child tell this frame? ok = every content word exact; near = right words, wrong forms */
+function frameStatus(f, text){ const heard=normW(text); let st="ok";
+  for(const k of frameKeys(f)){ if(heard.includes(k)) continue; if(heard.some(h=>stemLike(h,k))){ st="near"; continue; } return "miss"; } return st; }
+function listenLong(onPart, onDone, onFail){
+  if(!SR){ onFail("nosr"); return; }
+  try{ if(recog) recog.abort(); }catch(e){} try{ speechSynthesis.cancel(); }catch(e){}
+  const r=new SR(); recog=r; r.lang="ru-RU"; r.interimResults=true; r.continuous=true; r.maxAlternatives=1;
+  let fin="", interim="", failed=false;
+  r.onresult=e=>{ interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript; if(e.results[i].isFinal) fin+=" "+t; else interim+=" "+t; } onPart((fin+" "+interim).trim()); };
+  r.onerror=e=>{ if(e.error==="no-speech"||e.error==="aborted") return; failed=true; onFail(e.error); };
+  r.onend=()=>{ if(failed) return; const all=(fin+" "+interim).trim(); all ? onDone(all) : onFail("no-speech"); };
+  try{ r.start(); }catch(e){ onFail("start"); }
+}
+const MIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>';
+const micFail = err => err==="not-allowed"||err==="service-not-allowed" ? "Нет доступа к микрофону. Разрешите его в Safari и откройте приложение по ссылке GitHub."
+  : err==="nosr" ? "Голосовой ответ работает в Safari, в версии приложения с GitHub." : "Не расслышал. Нажми и скажи еще раз.";
+function storyJudge(model, empty, btns){
+  $("judge").innerHTML=`<div class="model ${empty?"empty":""}" id="model">${model}</div>
+    <div class="microw"><button class="mic" id="jMic" aria-label="Ответить голосом">${MIC_SVG}</button><span class="heard" id="jHeard">${SR?"Нажми на микрофон и скажи ответ.":"Голосовой ответ работает в Safari, в версии приложения с GitHub."}</span></div>
+    <div class="jrow"><p class="jnote">Для родителей: удерживайте кнопку</p>${btns.map(([id,t,c])=>`<button class="jbtn ${c||""}" id="${id}">${esc(t)}</button>`).join("")}</div>`;
+  showArea("judge");
+}
+const storyCard = (chip, text, state) => setCard(`<span class="chip" style="background:#7E57C2">${chip}</span><span>${esc(text)}</span>`, state);
+function storyTask(){
+  let g=0, s; do{ s=rnd(STORY3); g++; }while(g<10 && cur && cur.story===s);
+  cur={kind:"say", ty:"say", story:s, prompts:0, near:false, ordErr:0};
+  storyFrame(0, 0);
+}
+/* phase 1: each picture, «Кто это?» then «Что делает …?» */
+function storyFrame(i, qi){
+  const s=cur.story, f=s.frames[i], st=S.st.say; busy=false;
+  clearScene(); room(false); $("mascot").classList.remove("off"); $("sBg").innerHTML=f.art;
+  const q = qi===0 ? "Кто это?" : `Что делает ${f.who.toLowerCase()}?`, answer = qi===0 ? f.who : f.does;
+  cur.speech=q; cur.render=state=>storyCard(`${i+1} из 3`, q, state); cur.render();
+  const shown = st===1 ? answer : (st===2 ? answer.split(" ")[0]+(answer.includes(" ")?" …":"") : "");
+  storyJudge(shown?esc(cap(shown)):"Ответ скрыт.", !shown, [["jSelf","Сказал сам","self"],["jNext","Дальше","help"]]);
+  const next=(how, ok)=>{ if(busy) return; busy=true;
+    logIt("say","storyQ",`«${s.title}», ${i+1}: ${q} → ${cap(answer)}`, how, ok);
+    if(qi===0){ $("model").textContent=cap(answer); $("model").classList.remove("empty"); say(cap(answer)); cur.render(ok?"ok":null); if(ok) onRightFx($("jMic")); later(()=>storyFrame(i,1),1500); return; }
+    $("model").textContent=f.line; $("model").classList.remove("empty"); say(f.line); cur.render(ok?"ok":null); if(ok) onRightFx($("jMic"));
+    later(()=> i<2 ? storyFrame(i+1,0) : storyOrder(), 2400); };
+  holdBtn($("jSelf"), ()=>next("сам", true)); holdBtn($("jNext"), ()=>next("пропуск (родитель)", false));
+  const mic=$("jMic"), heard=$("jHeard");
+  mic.onclick=()=>{ if(busy) return; if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
+    mic.classList.add("listening"); heard.textContent="Слушаю…"; sfx("tap");
+    listen(alts=>{ mic.classList.remove("listening"); if(busy) return;
+      const b = qi===0 ? bestSpeech(answer, alts, true) : [bestSpeech(answer, alts), bestSpeech(answer.split(" ")[0], alts)].sort((x,y)=>(y.perfect-x.perfect)||(y.score-x.score))[0];
+      heard.textContent=`Услышал: «${b.t}»`;
+      if(b.perfect){ next(`голосом: «${b.t}»`, true); return; }
+      if(b.near && b.res.length===normW(answer).length){ $("model").innerHTML=markAnswer(cap(answer), b.res)+`<span class="said">Ты сказал: «${esc(b.t)}»</span>`; $("model").classList.remove("empty"); say(cap(answer)); }
+      heard.textContent+=". Скажи еще раз."; mascot("oops","Еще раз!"); sfx("tap");
+    }, err=>{ mic.classList.remove("listening"); if(!busy) heard.textContent=micFail(err); });
+  };
+  say(q);
+}
+/* phase 2: put the pictures in order by tapping (no dragging needed) */
+const SX=[20,350,680], SW=.3;
+function thumb(f, n){ return `<rect width="1000" height="600" fill="none"/>${f.art}<rect x="4" y="4" width="992" height="592" rx="26" fill="none" stroke="#fff" stroke-width="10"/><rect x="0" y="0" width="1000" height="600" rx="30" fill="none" stroke="#B0BEC5" stroke-width="8"/>${n?`<circle cx="95" cy="95" r="70" fill="#7E57C2" stroke="#fff" stroke-width="10"/><text x="95" y="128" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="96" fill="#fff">${n}</text>`:""}`; }
+function storyOrder(){
+  const s=cur.story; busy=false; clearScene(); room(false); $("mascot").classList.add("off"); showArea(null);
+  let step=0;
+  $("sBack").innerHTML = SX.map((x,i)=>`<rect x="${x}" y="330" width="300" height="180" rx="12" fill="#F3EEFC" stroke="#B39DDB" stroke-width="4" stroke-dasharray="14 10"/><text x="${x+150}" y="448" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="90" fill="#D1C4E9">${i+1}</text>`).join("");
+  let order; do{ order=shuffle([0,1,2]); }while(order.every((v,i)=>v===i));
+  const setQ=()=>{ cur.speech=ASK[Math.min(step,2)]; cur.render=state=>storyCard("ПО ПОРЯДКУ", step<3?ASK[step]:"Молодец!", state); cur.render(); };
+  setQ();
+  order.forEach((fi,k)=>{ const it=addItem(thumb(s.frames[fi]), SX[k], 40, SW, false);
+    it.el.addEventListener("click", ()=>{ if(busy||it.placed) return;
+      if(fi===step){ it.placed=true; it.el.querySelector(".inner").innerHTML=thumb(s.frames[fi], step+1); sfx("pop"); tween(it,[SX[step],330],450); say(`${CONN[step]} ${lowFirst(s.frames[fi].line)}`);
+        step++; if(step===3){ busy=true; cur.render("ok"); logIt("say","storyOrd",`«${s.title}»: порядок`, cur.ordErr?`ошибок: ${cur.ordErr}`:"без ошибок", !cur.ordErr); later(storyTell, 3200); } else later(()=>{ setQ(); },1600); }
+      else { cur.ordErr++; anim(it.el,"jiggle"); sfx("tap"); say(ASK[step]); }
+    }); });
+  later(()=>say("Разложи картинки по порядку. "+ASK[0]),300);
+}
+/* phase 3: the whole story by pictures, then prompting questions for what was missed */
+function drawStrip(marks){
+  const s=cur.story, st=S.st.say; clearScene(); room(false);
+  $("sBack").innerHTML = s.frames.map((f,i)=>`<g transform="translate(${SX[i]},140) scale(${SW})">${thumb(f,i+1)}</g>`).join("");
+  $("sFront").innerHTML = s.frames.map((f,i)=>{ const x=SX[i]+150, m=marks&&marks[i];
+    const cap1 = st===1 ? `${CONN[i]} ${lowFirst(f.line).split(" ")[0]} …` : (st===2 ? `${CONN[i]} …` : "");
+    return `${m==="hi"?`<rect class="story-hi" x="${SX[i]-8}" y="132" width="316" height="196" rx="18" fill="none" stroke="#FF9800" stroke-width="10"/>`:""}
+      ${m==="ok"?`<g transform="translate(${SX[i]+270},162)"><circle r="34" fill="#12A84A" stroke="#fff" stroke-width="6"/><path d="M-15,0 l10,11 l20,-22" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`:""}
+      ${m&&m.line ? svgLines(m.line, x, 380, 32, "#1B1B1B", 16) : (cap1 ? svgLines(cap1, x, 380, 34, "#5E35B1", 16) : "")}`; }).join("");
+}
+function storyTell(){
+  const s=cur.story; busy=false; $("mascot").classList.add("off"); drawStrip(null);
+  cur.speech="Расскажи всю историю"; cur.render=state=>storyCard("СКАЖИ", "Расскажи всю историю", state); cur.render();
+  storyJudge("Нажми на микрофон и расскажи. Когда закончишь, нажми еще раз.", true, [["jSelf","Рассказал сам","self"],["jHelp","С подсказкой","help"],["jNo","Не рассказал",""]]);
+  $("jHeard").textContent = SR ? "Слушаю, пока не нажмешь снова." : $("jHeard").textContent;
+  const finish=(kind, how)=>{ if(busy) return; busy=true; try{ recog&&recog.abort(); }catch(e){}
+    const ok=kind==="self"; drawStrip(s.frames.map(f=>({line:f.line}))); $("model").textContent=storyText(s); $("model").classList.remove("empty");
+    cur.render(ok?"ok":(kind==="no"?"err":null)); say(storyText(s)); if(ok) onRightFx($("jMic")); else sfx("tap");
+    logIt("say","say",`История «${s.title}»`, how, ok);
+    if(ok){ win("say"); later(afterWin,7000); } else { if(kind==="no") lose("say"); else neutral("say"); later(()=>nextTask(),7000); } };
+  holdBtn($("jSelf"), ()=>finish("self","сам (родитель)")); holdBtn($("jHelp"), ()=>finish("help","с подсказкой (родитель)")); holdBtn($("jNo"), ()=>finish("no","не рассказал"));
+  const mic=$("jMic"), heard=$("jHeard");
+  mic.onclick=()=>{ if(busy) return; if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
+    mic.classList.add("listening"); heard.textContent="Рассказывай…"; sfx("tap");
+    listenLong(t=>{ heard.textContent=`«${t}»`; }, text=>{ mic.classList.remove("listening"); if(busy) return;
+      const res=s.frames.map(f=>frameStatus(f,text));
+      cur.told=text; heard.textContent=`Услышал: «${text}»`;
+      if(res.every(r=>r==="ok")){ finish("self", `голосом: «${text}»`); return; }
+      if(res.some(r=>r==="near")) cur.near=true;
+      storyPrompt(res, text);
+    }, err=>{ mic.classList.remove("listening"); if(!busy) heard.textContent=micFail(err); });
+  };
+  say("Расскажи всю историю. Сначала…");
+  /* prompting: one missed picture at a time, «А что было потом?» */
+  function storyPrompt(res, text){
+    const i=res.findIndex(r=>r!=="ok");
+    if(i<0){ finish(cur.prompts||cur.near?"help":"self", `голосом: «${cur.told}»`+(cur.prompts?`, наводящих вопросов: ${cur.prompts}`:"")); return; }
+    cur.prompts++; const f=s.frames[i]; let tries=0;
+    drawStrip(res.map((r,k)=>k===i?"hi":(r==="ok"?"ok":null)));
+    const q=ASK[i]; cur.speech=q; cur.render=state=>storyCard(`${i+1}`, q, state); cur.render();
+    if(res[i]==="near"){ const b=analyzeSpeech(f.line, text); $("model").innerHTML=markAnswer(f.line, b.res); $("model").classList.remove("empty"); }
+    else { $("model").textContent = S.st.say===1 ? `${CONN[i]} ${lowFirst(f.line).split(" ")[0]} …` : "Посмотри на картинку."; $("model").classList.add("empty"); }
+    heard.textContent="Нажми на микрофон и скажи.";
+    mascot("wave"); say(q);
+    mic.onclick=()=>{ if(busy) return; if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
+      mic.classList.add("listening"); heard.textContent="Слушаю…"; sfx("tap");
+      listen(alts=>{ mic.classList.remove("listening"); if(busy) return;
+        const best=alts.map(t=>({t, r:frameStatus(f,t)})).sort((a,b)=>({ok:2,near:1,miss:0}[b.r])-({ok:2,near:1,miss:0}[a.r]))[0];
+        heard.textContent=`Услышал: «${best.t}»`;
+        if(best.r==="ok"){ res[i]="ok"; sfx("ok"); say(`${CONN[i]} ${lowFirst(f.line)}`); later(()=>storyPrompt(res, text), 2200); return; }
+        tries++; if(best.r==="near") cur.near=true;
+        const b=analyzeSpeech(f.line, best.t);
+        if(best.r==="near"||tries>=2){ $("model").innerHTML=markAnswer(f.line, b.res); $("model").classList.remove("empty"); say(f.line); } heard.textContent+=". Скажи еще раз."; mascot("oops","Еще раз!");
+      }, err=>{ mic.classList.remove("listening"); if(!busy) heard.textContent=micFail(err); });
+    };
+  }
 }
 
 /* ================= 6. my day ================= */
@@ -1505,7 +1738,7 @@ $("mascot").insertAdjacentHTML("afterbegin", mascotSvg()); applyCalm();
 renderStars(); renderHome();
 (function(){ const sp=$("splash"); let gone=false; const hide=()=>{ if(gone) return; gone=true; sp.classList.add("out"); setTimeout(()=>sp.remove(),400); };
   sp.addEventListener("pointerdown", hide); setTimeout(hide, matchMedia("(prefers-reduced-motion: reduce)").matches ? 500 : 1300); })();
-window.__alan = {showReward:()=>showReward(), TRACKS, S, makeActScene, STORIES, FRAMES, OBJS, DAY_ITEMS, start, nextTask};
+window.__alan = {STORY3, showReward:()=>showReward(), TRACKS, S, makeActScene, STORIES, FRAMES, OBJS, DAY_ITEMS, start, nextTask};
 })();
 
 /* no zoom: block pinch (iOS gesture events) */
