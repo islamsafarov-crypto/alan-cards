@@ -697,7 +697,15 @@ TRACK_KEYS.forEach(k=>{ run.streak[k]=0; run.errs[k]=0; });
 let voice=null;
 function pickVoice(){ try{ const vs=speechSynthesis.getVoices().filter(v=>/^ru/i.test(v.lang)); voice=vs.find(v=>/milena|katya|google/i.test(v.name))||vs[0]||null; }catch(e){} }
 if("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
-function say(t){ if(!t||!S.sound||!("speechSynthesis" in window)) return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t.toLowerCase()); u.lang="ru-RU"; u.rate=S.rate; if(voice) u.voice=voice; speechSynthesis.speak(u);}catch(e){} }
+/* speaks sentence by sentence with a short pause between them («Мама пьет чай.» … «Что пьет мама?») */
+let sayGen=0;
+function say(t){ if(!t||!S.sound||!("speechSynthesis" in window)) return; const gen=++sayGen;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  const parts=String(t).split(/(?<=[.!?…])\s+/).map(x=>x.trim()).filter(Boolean);
+  const next=i=>{ if(gen!==sayGen || i>=parts.length) return; try{ const u=new SpeechSynthesisUtterance(parts[i].toLowerCase()); u.lang="ru-RU"; u.rate=S.rate; if(voice) u.voice=voice;
+    if(i<parts.length-1){ let done=false; const go=()=>{ if(done) return; done=true; setTimeout(()=>next(i+1), 900); }; u.onend=go; u.onerror=go; }
+    speechSynthesis.speak(u); }catch(e){} };
+  next(0); }
 
 /* ================= fx: motion, sounds, mascot ================= */
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -843,7 +851,7 @@ function showReady(k){
   $("rNo").onclick=goHome;
   say("Готов?");
 }
-function goHome(){ try{ recog&&recog.abort(); }catch(e){} $("readyScr").hidden=true; $("prog").hidden=true; clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
+function goHome(){ try{ recog&&recog.abort(); }catch(e){} $("readyScr").hidden=true; $("prog").hidden=true; clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; sayGen++; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
 function start(m){ mode=m; cur=null; $("home").hidden=true; $("play").hidden=false; $("backBtn").hidden=false; $("hdrTitle").textContent=TRACKS[m].title; renderStars(); nextTask(); }
 $("backBtn").onclick=goHome;
 $("speakBtn").onclick=()=>{ if(cur&&cur.speech) say(cur.speech); };
@@ -1182,7 +1190,7 @@ let recog=null;
 function listen(onText, onFail){
   if(!SR){ onFail("nosr"); return; }
   try{ if(recog) recog.abort(); }catch(e){}
-  try{ speechSynthesis.cancel(); }catch(e){}
+  sayGen++; try{ speechSynthesis.cancel(); }catch(e){}
   const r=new SR(); recog=r; r.lang="ru-RU"; r.interimResults=false; r.maxAlternatives=5; r.continuous=false;
   let got=false;
   r.onresult=e=>{ got=true; const alts=[]; const res=e.results[0]; for(let i=0;i<res.length;i++) alts.push(res[i].transcript); onText(alts); };
@@ -1340,7 +1348,7 @@ function frameStatus(f, text){ const heard=normW(text); let st="ok";
   for(const k of frameKeys(f)){ if(heard.includes(k)) continue; if(heard.some(h=>stemLike(h,k))){ st="near"; continue; } return "miss"; } return st; }
 function listenLong(onPart, onDone, onFail){
   if(!SR){ onFail("nosr"); return; }
-  try{ if(recog) recog.abort(); }catch(e){} try{ speechSynthesis.cancel(); }catch(e){}
+  try{ if(recog) recog.abort(); }catch(e){} sayGen++; try{ speechSynthesis.cancel(); }catch(e){}
   const r=new SR(); recog=r; r.lang="ru-RU"; r.interimResults=true; r.continuous=true; r.maxAlternatives=1;
   let fin="", interim="", failed=false;
   r.onresult=e=>{ interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript; if(e.results[i].isFinal) fin+=" "+t; else interim+=" "+t; } onPart((fin+" "+interim).trim()); };
@@ -1632,7 +1640,7 @@ gear.addEventListener("pointerdown", e=>{ e.preventDefault(); gear.classList.add
 ["pointerup","pointerleave","pointercancel"].forEach(t=>gear.addEventListener(t, ()=>{ clearTimeout(holdT); gear.classList.remove("holding"); }));
 gear.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" ") openParent(); });
 $("parentClose").onclick=()=>{ $("parent").hidden=true; if(mode){ cur=null; nextTask(); } else renderHome(); };
-function openParent(){ clearTimeout(timer); try{speechSynthesis.cancel();}catch(e){} renderParent(); $("parent").hidden=false; }
+function openParent(){ clearTimeout(timer); sayGen++; try{speechSynthesis.cancel();}catch(e){} renderParent(); $("parent").hidden=false; }
 function seg(el, list, isOn, onTap){ el.innerHTML=""; list.forEach(it=>{ const b=document.createElement("button"); b.textContent=it.label; if(isOn(it.v)) b.classList.add("on"); b.onclick=()=>{ onTap(it.v); save(); renderParent(); }; el.appendChild(b); }); }
 const openTracks=new Set();
 function setLevel(tr, v){ S.lvl[tr]=v; S.st[tr]=1; S.resetAt[tr]=Date.now(); run.streak[tr]=0; run.errs[tr]=0; }
