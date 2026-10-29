@@ -366,7 +366,7 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
 <div class="parent" id="parent" hidden>
   <div class="parent-in">
     <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
-    <p class="hint-txt" id="appVer">Версия: 28.10.2026 18:32</p>
+    <p class="hint-txt" id="appVer">Версия: 29.10.2026 15:51</p>
     <p class="hint-txt">В каждом модуле: уровни — новое содержание, ступени — сколько подсказок. Ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
     <details class="pbox">
@@ -700,10 +700,13 @@ function pickVoice(){ try{ const vs=speechSynthesis.getVoices().filter(v=>/^ru/i
 if("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
 /* speaks sentence by sentence with a short pause between them («Мама пьет чай.» … «Что пьет мама?») */
 let sayGen=0;
+/* stress fixes for the voice: the text on screen stays the same, the voice gets an accent mark (U+0301) */
+const STRESS = {"воды":"воды\u0301", "звезды":"звезды\u0301", "якоря":"я\u0301коря"};
+const fixStress = t => t.replace(/[а-яё]+/g, w => STRESS[w] || w);
 function say(t){ if(!t||!S.sound||!("speechSynthesis" in window)) return; const gen=++sayGen;
   try{ speechSynthesis.cancel(); }catch(e){}
   const parts=String(t).split(/(?<=[.!?…])\s+/).map(x=>x.trim()).filter(Boolean);
-  const next=i=>{ if(gen!==sayGen || i>=parts.length) return; try{ const u=new SpeechSynthesisUtterance(parts[i].toLowerCase()); u.lang="ru-RU"; u.rate=S.rate; if(voice) u.voice=voice;
+  const next=i=>{ if(gen!==sayGen || i>=parts.length) return; try{ const u=new SpeechSynthesisUtterance(fixStress(parts[i].toLowerCase())); u.lang="ru-RU"; u.rate=S.rate; if(voice) u.voice=voice;
     if(i<parts.length-1){ let done=false; const go=()=>{ if(done) return; done=true; setTimeout(()=>next(i+1), 900); }; u.onend=go; u.onerror=go;
       setTimeout(go, 1200+parts[i].length*95/(S.rate||1)); }
     speechSynthesis.speak(u); }catch(e){} };
