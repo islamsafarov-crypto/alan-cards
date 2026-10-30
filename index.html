@@ -410,7 +410,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
 <div class="parent" id="parent" hidden>
   <div class="parent-in">
     <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
-    <p class="hint-txt" id="appVer">Версия: 30.10.2026 23:10</p>
+    <p class="hint-txt" id="appVer">Версия: 30.10.2026 23:40</p>
     <p class="hint-txt">В каждом модуле: уровни — новое содержание, ступени — сколько подсказок. Ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
     <details class="pbox">
@@ -457,6 +457,8 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
       <h3>Голос</h3>
       <div class="row"><span class="lbl">Озвучка</span><span class="seg" id="soundSeg"></span></div>
       <div class="row"><span class="lbl">Скорость</span><span class="seg" id="rateSeg"></span></div>
+      <div class="row"><span class="lbl">Голос</span><select id="voiceSel" style="font:inherit;font-size:16px;padding:8px 10px;border-radius:12px;border:2px solid var(--line);background:#fff;max-width:100%"></select></div>
+      <p class="hint-txt">Улучшенные голоса скачиваются в Настройках iPad: Универсальный доступ → Устный контент → Голоса → Русский. После скачивания откройте этот раздел заново.</p>
     </div>
     <div class="pbox">
       <h3>Отчёт для логопеда</h3>
@@ -857,7 +859,10 @@ TRACK_KEYS.forEach(k=>{ run.streak[k]=0; run.errs[k]=0; });
 
 /* ================= speech ================= */
 let voice=null;
-function pickVoice(){ try{ const vs=speechSynthesis.getVoices().filter(v=>/^ru/i.test(v.lang)); voice=vs.find(v=>/milena|katya|google/i.test(v.name))||vs[0]||null; }catch(e){} }
+const ruVoices = () => { try{ return speechSynthesis.getVoices().filter(v=>/^ru/i.test(v.lang)); }catch(e){ return []; } };
+const BETTER = /enhanced|premium|улучш|высок|siri|neural/i;
+function pickVoice(){ try{ const vs=ruVoices();
+  voice = (S.voiceName && vs.find(v=>v.name===S.voiceName)) || vs.find(v=>BETTER.test(v.name) && /milena|милена/i.test(v.name)) || vs.find(v=>BETTER.test(v.name)) || vs.find(v=>/milena|милена|katya|google/i.test(v.name)) || vs[0] || null; }catch(e){} }
 if("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
 /* speaks sentence by sentence with a short pause between them («Мама пьет чай.» … «Что пьет мама?») */
 let sayGen=0, saying=false;
@@ -2299,6 +2304,10 @@ function renderParent(){ renderResetRow();
   seg($("sfxSeg"), [{label:"Вкл",v:true},{label:"Выкл",v:false}], v=>S.sfx===v, v=>{ S.sfx=v; if(v) sfx("ok"); });
   seg($("autoSeg"), [{label:"Автоматически",v:true},{label:"С подтверждением",v:false}], v=>S.autoLevel===v, v=>{ S.autoLevel=v; });
   seg($("soundSeg"), [{label:"Вкл",v:true},{label:"Выкл",v:false}], v=>S.sound===v, v=>{ S.sound=v; });
+  { const sel=$("voiceSel"), vs=ruVoices(); pickVoice();
+    sel.innerHTML=`<option value="">Автоматически (лучший из скачанных)</option>`+vs.map(v=>`<option value="${esc(v.name)}"${S.voiceName===v.name?" selected":""}>${esc(v.name)}${voice&&voice.name===v.name&&!S.voiceName?" ✓":""}</option>`).join("");
+    if(!vs.length) sel.innerHTML=`<option value="">Голоса не найдены</option>`;
+    sel.onchange=()=>{ S.voiceName=sel.value||null; pickVoice(); save(); say("Положи мяч на стол. Что лишнее?"); }; }
   seg($("rateSeg"), [{label:"Медленно",v:0.7},{label:"Обычно",v:0.85},{label:"Быстрее",v:1}], v=>S.rate===v, v=>{ S.rate=v; say("Положи мяч на стол"); });
   const showRep=d=>{ const t=$("repText"); t.value=buildReport(d); t.hidden=false; $("repCopy").hidden=false; $("repShare").hidden=!navigator.share; };
   $("rep7").onclick=()=>showRep(7); $("rep30").onclick=()=>showRep(30);
