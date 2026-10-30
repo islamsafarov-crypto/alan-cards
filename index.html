@@ -103,6 +103,9 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .eyes{transform-box:fill-box;transform-origin:50% 50%;animation:blink 4.5s infinite}
 @keyframes blink{0%,91%,97%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}
 .turret{transform-box:fill-box;transform-origin:30% 85%}
+.upd{position:fixed;left:50%;top:max(10px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;background:#16212B;color:#fff;padding:8px 8px 8px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.25);font-weight:700;font-size:15px;max-width:calc(100vw - 32px)}
+.upd button{border-radius:999px;padding:8px 14px;font-weight:800;background:#FFC107;color:#16212B}
+.upd #updX{background:transparent;color:#fff;font-size:22px;padding:2px 8px}
 .sparkly .inner{animation:sparkly 1s ease-in-out infinite;filter:drop-shadow(0 0 12px #FFD54F)}
 @keyframes sparkly{50%{transform:translateY(-8px) scale(1.06)}}
 .tcard svg.locked{filter:grayscale(1) brightness(1.15);opacity:.3}
@@ -392,6 +395,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
   </div>
 </div>
 
+<div class="upd" id="updBar" hidden><span>Есть новая версия приложения</span><button id="updGo">Обновить</button><button id="updX" aria-label="Закрыть">×</button></div>
 <div class="tanks" id="finds" hidden>
   <div class="tanks-in">
     <div class="row"><h2>Мои находки</h2><button class="ghost" id="findsSong" hidden>Спеть всем</button><button class="ghost" id="findsClose">Назад</button></div>
@@ -410,7 +414,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
 <div class="parent" id="parent" hidden>
   <div class="parent-in">
     <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
-    <p class="hint-txt" id="appVer">Версия: 30.10.2026 23:40</p>
+    <p class="hint-txt" id="appVer">Версия: 30.10.2026 23:48</p>
     <p class="hint-txt">В каждом модуле: уровни — новое содержание, ступени — сколько подсказок. Ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
     <details class="pbox">
@@ -2340,6 +2344,19 @@ document.addEventListener("touchmove",e=>{ if(e.touches.length>1) e.preventDefau
 
 /* Safari sometimes leaves a stale copy of the SVG picture after the layout shifts: force a repaint on resize */
 { const sc=document.getElementById("scene"); if(window.ResizeObserver && sc){ new ResizeObserver(()=>{ sc.style.opacity="0.999"; requestAnimationFrame(()=>requestAnimationFrame(()=>{ sc.style.opacity=""; })); }).observe(sc); } }
+
+/* update banner: checks GitHub for a newer build when the app starts or comes back to the screen */
+(function(){
+  const mine=(document.getElementById("appVer")||{}).textContent||""; let dismissed="";
+  const check=()=>{ if(!/^https?:/.test(location.protocol)) return;
+    fetch(location.pathname+"?check="+Date.now(), {cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{
+      const m=t.match(/id="appVer">([^<]+)</); if(!m) return; const v=m[1].trim();
+      if(v && v!==mine.trim() && v!==dismissed){ const b=document.getElementById("updBar"); b.hidden=false;
+        document.getElementById("updGo").onclick=()=>location.replace(location.pathname+"?v="+encodeURIComponent(v.replace(/\D/g,"")));
+        document.getElementById("updX").onclick=()=>{ dismissed=v; b.hidden=true; }; } }).catch(()=>{}); };
+  setTimeout(check, 2500);
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") check(); });
+})();
 </script>
 
 </body>
