@@ -414,7 +414,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
 <div class="parent" id="parent" hidden>
   <div class="parent-in">
     <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
-    <p class="hint-txt" id="appVer">Версия: 31.10.2026 00:00</p>
+    <p class="hint-txt" id="appVer">Версия: 31.10.2026 00:05</p>
     <p class="hint-txt">В каждом модуле: уровни — новое содержание, ступени — сколько подсказок. Ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
     <details class="pbox">
@@ -1855,6 +1855,7 @@ function surpriseDue(){ sinceSurprise++; const p=SURPRISE_P[S.surprise||"some"]|
 /* hide a find under a basket/box/bucket; tap to lift; continue with next() either way */
 function showSurprise(next){
   busy=true; const h=rnd(HIDERS), f=rnd(FINDS);
+  $("panel").hidden=true; // text panels (Читаем) cover the scene: hide so the hider is visible
   const spots=[[880,470],[120,470],[500,480],[880,140],[120,150],[620,470],[380,470]];
   const inZone=(x,y)=>zones.some(z=>{ const [x1,y1,x2,y2]=z.rect; return x>x1-50&&x<x2+50&&y>y1-50&&y<y2+50; });
   const free=spots.find(([x,y])=>!inZone(x,y) && items.every(it=>Math.hypot(it.pos[0]-x,it.pos[1]-y)>130)) || spots.find(([x,y])=>!inZone(x,y)) || spots[0];
