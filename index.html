@@ -414,7 +414,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
 <div class="parent" id="parent" hidden>
   <div class="parent-in">
     <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
-    <p class="hint-txt" id="appVer">Версия: 30.10.2026 23:48</p>
+    <p class="hint-txt" id="appVer">Версия: 30.10.2026 23:54</p>
     <p class="hint-txt">В каждом модуле: уровни — новое содержание, ступени — сколько подсказок. Ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
     <details class="pbox">
@@ -866,7 +866,9 @@ let voice=null;
 const ruVoices = () => { try{ return speechSynthesis.getVoices().filter(v=>/^ru/i.test(v.lang)); }catch(e){ return []; } };
 const BETTER = /enhanced|premium|улучш|высок|siri|neural/i;
 function pickVoice(){ try{ const vs=ruVoices();
-  voice = (S.voiceName && vs.find(v=>v.name===S.voiceName)) || vs.find(v=>BETTER.test(v.name) && /milena|милена/i.test(v.name)) || vs.find(v=>BETTER.test(v.name)) || vs.find(v=>/milena|милена|katya|google/i.test(v.name)) || vs[0] || null; }catch(e){} }
+  const id=v=>v.voiceURI||v.name, better=v=>BETTER.test(v.name)||BETTER.test(v.voiceURI||"");
+  voice = (S.voiceName && vs.find(v=>id(v)===S.voiceName)) || vs.find(v=>better(v) && /milena|милена/i.test(v.name)) || vs.find(better) || vs.find(v=>/milena|милена|katya|google/i.test(v.name)) || vs[0] || null; }catch(e){} }
+const voiceLabel = v => { const u=(v.voiceURI||"").toLowerCase(); return v.name + (/premium/.test(u)?" (премиум)":/enhanced/.test(u)?" (улучшенный)":/compact/.test(u)?" (обычный)":""); };
 if("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
 /* speaks sentence by sentence with a short pause between them («Мама пьет чай.» … «Что пьет мама?») */
 let sayGen=0, saying=false;
@@ -2309,7 +2311,7 @@ function renderParent(){ renderResetRow();
   seg($("autoSeg"), [{label:"Автоматически",v:true},{label:"С подтверждением",v:false}], v=>S.autoLevel===v, v=>{ S.autoLevel=v; });
   seg($("soundSeg"), [{label:"Вкл",v:true},{label:"Выкл",v:false}], v=>S.sound===v, v=>{ S.sound=v; });
   { const sel=$("voiceSel"), vs=ruVoices(); pickVoice();
-    sel.innerHTML=`<option value="">Автоматически (лучший из скачанных)</option>`+vs.map(v=>`<option value="${esc(v.name)}"${S.voiceName===v.name?" selected":""}>${esc(v.name)}${voice&&voice.name===v.name&&!S.voiceName?" ✓":""}</option>`).join("");
+    sel.innerHTML=`<option value="">Автоматически (лучший из скачанных)</option>`+vs.map(v=>{ const id=v.voiceURI||v.name; return `<option value="${esc(id)}"${S.voiceName===id?" selected":""}>${esc(voiceLabel(v))}${voice&&voice===v&&!S.voiceName?" ✓":""}</option>`; }).join("");
     if(!vs.length) sel.innerHTML=`<option value="">Голоса не найдены</option>`;
     sel.onchange=()=>{ S.voiceName=sel.value||null; pickVoice(); save(); say("Положи мяч на стол. Что лишнее?"); }; }
   seg($("rateSeg"), [{label:"Медленно",v:0.7},{label:"Обычно",v:0.85},{label:"Быстрее",v:1}], v=>S.rate===v, v=>{ S.rate=v; say("Положи мяч на стол"); });
