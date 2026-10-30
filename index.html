@@ -1989,7 +1989,7 @@ window.__alan = {STORY3, showReward:()=>showReward(), TRACKS, S, makeActScene, S
 document.addEventListener("touchmove",e=>{ if(e.touches.length>1) e.preventDefault(); },{passive:false});
 
 /* Safari sometimes leaves a stale copy of the SVG picture after the layout shifts: force a repaint on resize */
-if(window.ResizeObserver){ new ResizeObserver(()=>{ scene.style.opacity="0.999"; requestAnimationFrame(()=>requestAnimationFrame(()=>{ scene.style.opacity=""; })); }).observe(scene); }
+{ const sc=document.getElementById("scene"); if(window.ResizeObserver && sc){ new ResizeObserver(()=>{ sc.style.opacity="0.999"; requestAnimationFrame(()=>requestAnimationFrame(()=>{ sc.style.opacity=""; })); }).observe(sc); } }
 </script>
 
 </body>
