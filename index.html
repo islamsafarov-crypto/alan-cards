@@ -399,7 +399,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
 <div class="parent" id="parent" hidden>
   <div class="parent-in">
     <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
-    <p class="hint-txt" id="appVer">Версия: 30.10.2026 18:20</p>
+    <p class="hint-txt" id="appVer">Версия: 30.10.2026 18:30</p>
     <p class="hint-txt">В каждом модуле: уровни — новое содержание, ступени — сколько подсказок. Ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
     <details class="pbox">
@@ -736,17 +736,18 @@ let voice=null;
 function pickVoice(){ try{ const vs=speechSynthesis.getVoices().filter(v=>/^ru/i.test(v.lang)); voice=vs.find(v=>/milena|katya|google/i.test(v.name))||vs[0]||null; }catch(e){} }
 if("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
 /* speaks sentence by sentence with a short pause between them («Мама пьет чай.» … «Что пьет мама?») */
-let sayGen=0;
+let sayGen=0, saying=false;
 /* stress fixes for the voice: the text on screen stays the same, the voice gets an accent mark (U+0301) */
 const STRESS = {"воды":"воды\u0301", "звезды":"звезды\u0301", "якоря":"я\u0301коря"};
 const fixStress = t => t.replace(/[а-яё]+/g, w => STRESS[w] || w);
-function say(t){ if(!t||!S.sound||!("speechSynthesis" in window)) return; const gen=++sayGen;
+function say(t){ if(!t||!S.sound||!("speechSynthesis" in window)) return; const gen=++sayGen; saying=true;
   try{ speechSynthesis.cancel(); }catch(e){}
   const parts=String(t).split(/(?<=[.!?…])\s+/).map(x=>x.trim()).filter(Boolean);
   const next=i=>{ if(gen!==sayGen || i>=parts.length) return; try{ const u=new SpeechSynthesisUtterance(fixStress(parts[i].toLowerCase())); u.lang="ru-RU"; u.rate=S.rate; if(voice) u.voice=voice;
     if(i<parts.length-1){ let done=false; const go=()=>{ if(done) return; done=true; setTimeout(()=>next(i+1), 900); }; u.onend=go; u.onerror=go;
       setTimeout(go, 1200+parts[i].length*95/(S.rate||1)); }
-    speechSynthesis.speak(u); }catch(e){} };
+    else { const fin=()=>{ if(gen===sayGen) saying=false; }; u.onend=fin; u.onerror=fin; setTimeout(fin, 1500+parts[i].length*110/(S.rate||1)); }
+    speechSynthesis.speak(u); }catch(e){ saying=false; } };
   next(0); }
 
 /* ================= fx: motion, sounds, mascot ================= */
@@ -843,6 +844,8 @@ function showPanel(html){ $("panel").innerHTML=html; $("panel").hidden=false; }
 /* ================= screens ================= */
 let mode=null, cur=null, busy=false, revealed=false, timer=null;
 function later(fn,ms){ clearTimeout(timer); timer=setTimeout(fn,ms); }
+/* run fn only after the voice has finished speaking, plus a short pause */
+function whenQuiet(fn, gap){ const t0=Date.now(); const chk=()=>{ if(saying && Date.now()-t0<25000){ later(chk,200); return; } later(fn, gap); }; later(chk, 250); }
 function lvlLabel(tr){ return `Уровень ${S.lvl[tr]}: ${TRACKS[tr].levels[S.lvl[tr]-1].name}`; }
 function chipArt(chips){ let x=10; return chips.map(([t,c])=>{ const w=18+t.length*14; const g=`<rect x="${x}" y="14" width="${w}" height="40" rx="10" fill="${c}"/><text x="${x+w/2}" y="41" text-anchor="middle" class="label" style="font-size:18px">${t}</text>`; x+=w+10; return g; }).join(""); }
 
@@ -911,7 +914,7 @@ function showReady(k){
   $("rNo").onclick=goHome;
   say("Готов?");
 }
-function goHome(){ try{ recog&&recog.abort(); }catch(e){} $("readyScr").hidden=true; $("prog").hidden=true; clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; sayGen++; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
+function goHome(){ try{ recog&&recog.abort(); }catch(e){} $("readyScr").hidden=true; $("prog").hidden=true; clearTimeout(timer); mode=null; $("home").hidden=false; $("play").hidden=true; $("backBtn").hidden=true; $("hdrTitle").textContent="Alan"; sayGen++; saying=false; try{speechSynthesis.cancel();}catch(e){} renderHome(); }
 function start(m){ mode=m; cur=null; $("home").hidden=true; $("play").hidden=false; $("backBtn").hidden=false; $("hdrTitle").textContent=TRACKS[m].title; renderStars(); nextTask(); }
 $("backBtn").onclick=goHome;
 $("speakBtn").onclick=()=>{ if(cur&&cur.speech) say(cur.speech); };
@@ -1250,7 +1253,7 @@ let recog=null;
 function listen(onText, onFail){
   if(!SR){ onFail("nosr"); return; }
   try{ if(recog) recog.abort(); }catch(e){}
-  sayGen++; try{ speechSynthesis.cancel(); }catch(e){}
+  sayGen++; saying=false; try{ speechSynthesis.cancel(); }catch(e){}
   const r=new SR(); recog=r; r.lang="ru-RU"; r.interimResults=false; r.maxAlternatives=5; r.continuous=false;
   let got=false;
   r.onresult=e=>{ got=true; const alts=[]; const res=e.results[0]; for(let i=0;i<res.length;i++) alts.push(res[i].transcript); onText(alts); };
@@ -1408,7 +1411,7 @@ function frameStatus(f, text){ const heard=normW(text); let st="ok";
   for(const k of frameKeys(f)){ if(heard.includes(k)) continue; if(heard.some(h=>stemLike(h,k))){ st="near"; continue; } return "miss"; } return st; }
 function listenLong(onPart, onDone, onFail){
   if(!SR){ onFail("nosr"); return; }
-  try{ if(recog) recog.abort(); }catch(e){} sayGen++; try{ speechSynthesis.cancel(); }catch(e){}
+  try{ if(recog) recog.abort(); }catch(e){} sayGen++; saying=false; try{ speechSynthesis.cancel(); }catch(e){}
   const r=new SR(); recog=r; r.lang="ru-RU"; r.interimResults=true; r.continuous=true; r.maxAlternatives=1;
   let fin="", interim="", failed=false;
   r.onresult=e=>{ interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript; if(e.results[i].isFinal) fin+=" "+t; else interim+=" "+t; } onPart((fin+" "+interim).trim()); };
@@ -1495,7 +1498,7 @@ function storyTell(){
     const ok=kind==="self"; drawStrip(s.frames.map(f=>({line:f.line}))); $("model").textContent=storyText(s); $("model").classList.remove("empty");
     cur.render(ok?"ok":(kind==="no"?"err":null)); say(storyText(s)); if(ok) onRightFx($("jMic")); else sfx("tap");
     logIt("say","say",`История «${s.title}»`, how, ok);
-    if(ok){ win("say"); later(afterWin,7000); } else { if(kind==="no") lose("say"); else neutral("say"); later(()=>nextTask(),7000); } };
+    if(ok){ win("say"); whenQuiet(afterWin,1500); } else { if(kind==="no") lose("say"); else neutral("say"); whenQuiet(()=>nextTask(),1500); } };
   holdBtn($("jSelf"), ()=>finish("self","сам (родитель)")); holdBtn($("jHelp"), ()=>finish("help","с подсказкой (родитель)")); holdBtn($("jNo"), ()=>finish("no","не рассказал"));
   const mic=$("jMic"), heard=$("jHeard");
   mic.onclick=()=>{ if(busy) return; if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
@@ -1630,7 +1633,7 @@ function oddTask(repeat){
 function oddDone(t, groupLine){
   const ok=!cur.mist; if(cur.bracket) cur.bracket(); cur.render(ok?"ok":null);
   logIt("odd","odd",`${t.items.map(x=>x.word).join(", ")} → лишнее: ${t.odd.word}`, ok?"верно":`ошибок: ${cur.mist}`, ok);
-  if(ok){ win("odd"); later(afterWin, 4200); } else { lose("odd"); later(()=>nextTask(), 4200); }
+  if(ok){ win("odd"); whenQuiet(afterWin, 1300); } else { lose("odd"); whenQuiet(()=>nextTask(), 1300); }
 }
 /* levels 4–5: name the group with one word (buttons or voice) */
 function oddAskGroup(t, C, groupLine, how){
@@ -1827,7 +1830,7 @@ gear.addEventListener("pointerdown", e=>{ e.preventDefault(); gear.classList.add
 ["pointerup","pointerleave","pointercancel"].forEach(t=>gear.addEventListener(t, ()=>{ clearTimeout(holdT); gear.classList.remove("holding"); }));
 gear.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" ") openParent(); });
 $("parentClose").onclick=()=>{ $("parent").hidden=true; if(mode){ cur=null; nextTask(); } else renderHome(); };
-function openParent(){ clearTimeout(timer); sayGen++; try{speechSynthesis.cancel();}catch(e){} renderParent(); $("parent").hidden=false; }
+function openParent(){ clearTimeout(timer); sayGen++; saying=false; try{speechSynthesis.cancel();}catch(e){} renderParent(); $("parent").hidden=false; }
 function seg(el, list, isOn, onTap){ el.innerHTML=""; list.forEach(it=>{ const b=document.createElement("button"); b.textContent=it.label; if(isOn(it.v)) b.classList.add("on"); b.onclick=()=>{ onTap(it.v); save(); renderParent(); }; el.appendChild(b); }); }
 const openTracks=new Set();
 function setLevel(tr, v){ S.lvl[tr]=v; S.st[tr]=1; S.resetAt[tr]=Date.now(); run.streak[tr]=0; run.errs[tr]=0; }
