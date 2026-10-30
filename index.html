@@ -414,7 +414,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
 <div class="parent" id="parent" hidden>
   <div class="parent-in">
     <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
-    <p class="hint-txt" id="appVer">Версия: 31.10.2026 00:08</p>
+    <p class="hint-txt" id="appVer">Версия: 31.10.2026 00:13</p>
     <p class="hint-txt">В каждом модуле: уровни — новое содержание, ступени — сколько подсказок. Ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
     <details class="pbox">
@@ -877,11 +877,12 @@ const STRESS = {"воды":"воды\u0301", "звезды":"звезды\u0301"
 const fixStress = t => t.replace(/[а-яё]+/g, w => STRESS[w] || w);
 function say(t){ if(!t||!S.sound||!("speechSynthesis" in window)) return; const gen=++sayGen; saying=true;
   try{ speechSynthesis.cancel(); }catch(e){}
-  const parts=String(t).split(/(?<=[.!?…])\s+/).map(x=>x.trim()).filter(Boolean);
+  /* sentences get a ~0.9 s pause; a "|" inside a phrase gives a shorter ~0.5 s pause ("Он | или | она?") */
+  const parts=[], gaps=[]; String(t).split(/(?<=[.!?…])\s+/).forEach(sn=>{ sn.split("|").map(x=>x.trim()).filter(Boolean).forEach((x,k,arr)=>{ parts.push(x); gaps.push(k<arr.length-1?450:900); }); });
   const next=i=>{ if(gen!==sayGen || i>=parts.length) return; try{ const u=new SpeechSynthesisUtterance(fixStress(parts[i].toLowerCase())); u.lang="ru-RU"; u.rate=S.rate; if(voice) u.voice=voice;
     if(i<parts.length-1){ let done=false, t0=Date.now();
       /* iOS sometimes reports "end" too early, so also wait until the voice is really silent */
-      const go=()=>{ if(done) return; done=true; const wait=()=>{ if(gen!==sayGen) return; if(speechSynthesis.speaking && Date.now()-t0<12000){ setTimeout(wait,120); return; } setTimeout(()=>next(i+1), 900); }; setTimeout(wait,150); };
+      const go=()=>{ if(done) return; done=true; const wait=()=>{ if(gen!==sayGen) return; if(speechSynthesis.speaking && Date.now()-t0<12000){ setTimeout(wait,120); return; } setTimeout(()=>next(i+1), gaps[i]); }; setTimeout(wait,150); };
       u.onend=go; u.onerror=go; setTimeout(go, 1200+parts[i].length*95/(S.rate||1)); }
     else { const fin=()=>{ if(gen===sayGen) saying=false; }; u.onend=fin; u.onerror=fin; setTimeout(fin, 1500+parts[i].length*110/(S.rate||1)); }
     speechSynthesis.speak(u); }catch(e){ saying=false; } };
@@ -1920,10 +1921,10 @@ function mineTask(repeat){
     const people=PHOTOS.filter(p=>(p.name||"").trim());
     if(people.length && cur.seed<.35){ const ph=people[Math.floor(cur.seed*100)%people.length], nm=ph.name.trim(), g=personGender(nm), right=g==="f"?"Она":"Он";
       clearScene(); showPhoto(ph.src); cur.wkey="pron:"+g;
-      present({ty:"mine", label:`${nm}: он или она`, html:`<span>Это ${esc(nm)}.</span><span class="blank">?</span>`, speech:`Это ${nm}. Он или она?`, right, cls:"plain", okSay:`${right}. Это ${nm}.`, opts:["Он","Она"]}); return; }
+      present({ty:"mine", label:`${nm}: он или она`, html:`<span>Это ${esc(nm)}.</span><span class="blank">?</span>`, speech:`Это ${nm}. Он | или | она?`, right, cls:"plain", okSay:`${right}. Это ${nm}.`, opts:["Он","Она"]}); return; }
     const chId=["cat","dog","bear"][Math.floor(cur.seed*3)], act=["spit","sidit","begaet","chitaet"][Math.floor(cur.seed*40)%4], g=CH_G[chId], right=g==="f"?"Она":"Он", v=VERB_P[act][2];
     drawChar(chId, act, act==="chitaet"?"book":null); cur.wkey="pron:"+g;
-    present({ty:"mine", label:`${chOf(chId).nom}: ${v}`, html:`<span class="blank">?</span><span>${v}</span>`, speech:`Кто ${v}? Он или она?`, right, cls:"plain", okSay:`${right} ${v}. Это ${chOf(chId).nom}.`, opts:["Он","Она"]});
+    present({ty:"mine", label:`${chOf(chId).nom}: ${v}`, html:`<span class="blank">?</span><span>${v}</span>`, speech:`Кто ${v}? Он | или | она?`, right, cls:"plain", okSay:`${right} ${v}. Это ${chOf(chId).nom}.`, opts:["Он","Она"]});
   } else if(k==="moy"){
     const pool=OBJS.filter(o=>OBJ_G[o.id]), o=weakPick(pool, o=>"moy:"+OBJ_G[o.id]), g=OBJ_G[o.id], P={m:"Мой",f:"Моя",n:"Моё"}, right=P[g];
     clearScene(); bigCenter(o.svg, 2.4); cur.wkey="moy:"+g;
