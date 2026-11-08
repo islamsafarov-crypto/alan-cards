@@ -414,7 +414,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
 <div class="parent" id="parent" hidden>
   <div class="parent-in">
     <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
-    <p class="hint-txt" id="appVer">Версия: 08.11.2026 10:45</p>
+    <p class="hint-txt" id="appVer">Версия: 08.11.2026 11:20</p>
     <p class="hint-txt">В каждом модуле: уровни — новое содержание, ступени — сколько подсказок. Ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
     <details class="pbox">
@@ -873,7 +873,7 @@ if("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged=pi
 /* speaks sentence by sentence with a short pause between them («Мама пьет чай.» … «Что пьет мама?») */
 let sayGen=0, saying=false;
 /* stress fixes for the voice: the text on screen stays the same, the voice gets an accent mark (U+0301) */
-const STRESS = {"воды":"воды\u0301", "звезды":"звезды\u0301", "якоря":"я\u0301коря"};
+const STRESS = {"воды":"воды\u0301", "звезды":"звезды\u0301", "якоря":"я\u0301коря", "травы":"травы\u0301", "кирка":"ки\u0301рка", "кирку":"ки\u0301рку"};
 const fixStress = t => t.replace(/[а-яё]+/g, w => STRESS[w] || w);
 function say(t){ if(!t||!S.sound||!("speechSynthesis" in window)) return; const gen=++sayGen; saying=true;
   try{ speechSynthesis.cancel(); }catch(e){}
