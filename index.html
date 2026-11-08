@@ -414,7 +414,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
 <div class="parent" id="parent" hidden>
   <div class="parent-in">
     <div class="row"><h2>Для родителей</h2><button class="ghost" id="parentClose">Закрыть</button></div>
-    <p class="hint-txt" id="appVer">Версия: 31.10.2026 00:13</p>
+    <p class="hint-txt" id="appVer">Версия: 08.11.2026 10:45</p>
     <p class="hint-txt">В каждом модуле: уровни — новое содержание, ступени — сколько подсказок. Ступень растет сама после 5 правильных подряд и снижается после 2 ошибок подряд. Следующий уровень предлагается, когда на ступени 3 верно 8 из 10 последних заданий.</p>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
     <details class="pbox">
@@ -1920,7 +1920,7 @@ function mineTask(repeat){
   if(k==="onona"){
     const people=PHOTOS.filter(p=>(p.name||"").trim());
     if(people.length && cur.seed<.35){ const ph=people[Math.floor(cur.seed*100)%people.length], nm=ph.name.trim(), g=personGender(nm), right=g==="f"?"Она":"Он";
-      clearScene(); showPhoto(ph.src); cur.wkey="pron:"+g;
+      clearScene(); showPhoto(ph.img||ph.src); cur.wkey="pron:"+g;
       present({ty:"mine", label:`${nm}: он или она`, html:`<span>Это ${esc(nm)}.</span><span class="blank">?</span>`, speech:`Это ${nm}. Он | или | она?`, right, cls:"plain", okSay:`${right}. Это ${nm}.`, opts:["Он","Она"]}); return; }
     const chId=["cat","dog","bear"][Math.floor(cur.seed*3)], act=["spit","sidit","begaet","chitaet"][Math.floor(cur.seed*40)%4], g=CH_G[chId], right=g==="f"?"Она":"Он", v=VERB_P[act][2];
     drawChar(chId, act, act==="chitaet"?"book":null); cur.wkey="pron:"+g;
