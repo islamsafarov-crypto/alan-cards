@@ -919,8 +919,8 @@ const TRACKS = {
       {name:"Сначала… потом… (по порядку)", n:2, ordered:1, preps:["na","pod","v","ryadom"], scenes:["A","B"], objs:SCENE_OBJS},
       {name:"Три шага по порядку", n:3, ordered:1, preps:["na","pod","v","ryadom"], scenes:["A","B"], objs:SCENE_OBJS}]},
   mine:{title:"Я, ты, он, она", c:"#AD1457", b:"#FCE4EC", sub:"Местоимения: он/она, мой/моя/моё, его/её, я сплю — ты спишь.", chips:[["ОН","#AD1457"],["ОНА","#AD1457"]],
-    stages:"1 — меньше вариантов ответа; 2 и 3 — все варианты, на 3 текст только на слух.",
-    levels:[{name:"Он или она?", kind:"onona"},{name:"Мой, моя, моё", kind:"moy"},{name:"Его или её?", kind:"ego"},{name:"Я сплю — ты спишь — он спит", kind:"pers"}]},
+    stages:"1 — меньше вариантов ответа; 2 и 3 — все варианты, на 3 текст только на слух. В «Ответь голосом»: 1 — фраза написана, 2 — только «Я …», 3 — без подсказки.",
+    levels:[{name:"Он или она?", kind:"onona"},{name:"Мой, моя, моё", kind:"moy"},{name:"Его или её?", kind:"ego"},{name:"Я сплю — ты спишь — он спит", kind:"pers"},{name:"Ответь про себя: «Ты играешь?» — «Я играю»", kind:"answer"},{name:"Ответь про себя голосом", kind:"answerV"}]},
   want:{title:"Я хочу…", c:"#D81B60", b:"#FCE4EC", sub:"Целые фразы голосом: я хочу, дай, пожалуйста.", chips:[["Я ХОЧУ","#D81B60"]],
     stages:"1 — фраза написана; 2 — видно начало; 3 — без подсказки.",
     levels:[{name:"Я хочу …", kind:"hochu"},{name:"Дай, пожалуйста, …", kind:"day"},{name:"Я не хочу …, я хочу …", kind:"ne"}]},
@@ -2450,11 +2450,48 @@ function mineTask(repeat){
     drawChar(chId, act, oid); cur.wkey="ego:"+g;
     const chey={m:"Чей",f:"Чья",n:"Чьё"}[OBJ_G[oid]||"m"];
     present({ty:"mine", label:`${chey} ${o.nom}? (${chOf(chId).nom})`, html:`<span>Это</span><span class="blank">?</span><span>${o.nom}</span>`, speech:`${chey} это ${o.nom}?`, right:cap(right), cls:"plain", okSay:`Это ${right} ${o.nom}. ${cap(o.nom)} у ${chId==="dog"?"собаки":chId==="cat"?"кота":"мишки"}.`, opts:["Его","Её"]});
-  } else {
+  } else if(k==="answer" || k==="answerV"){ return mineAnswer(k==="answerV", st); } else {
     const act=freshPick(Object.keys(VERB_P), x=>"vp:"+x), chId=freshPick(["cat","dog","bear"], x=>"ch:"+x), p=rnd([0,1,2]), pron=["Я","Ты",CH_G[chId]==="f"?"Она":"Он"][p], forms=VERB_P[act].slice(0,3), right=forms[p];
     drawChar(chId, act, ACTS[act].objs?ACTS[act].objs[0]:null); cur.wkey="pers:"+p;
     present({ty:"mine", label:`${pron} … (${forms[2]})`, html:`<span>${pron}</span><span class="blank">?</span>`, speech:`${pron} …`, right, cls:"plain", okSay:`${pron} ${right}`, opts:forms, fmt:endingFmt(forms)});
   }
+}
+
+/* «Ты играешь?» — «Я играю»: answer about yourself instead of echoing the question */
+const ANSWER_V = [["играю","играешь","ball"],["рисую","рисуешь","pencil"],["читаю","читаешь","book"],["ем","ешь","apple"],["пью","пьёшь","milk"],
+  ["сплю","спишь","bed"],["сижу","сидишь","chair"],["гуляю","гуляешь","day_walk"],["считаю","считаешь","cube"],["слушаю","слушаешь","drum"]];
+function mineAnswer(voice, st){
+  if(!cur.av) cur.av=freshPick(ANSWER_V, x=>"av:"+x[0]);
+  const [ya,ty,pic]=cur.av, q=`Ты ${ty}?`, right=`Я ${ya}`;
+  clearScene(); room(false); addItem(ipic(pic,150), 500, 300, 1.9, false); cur.wkey="av:"+ya;
+  if(!voice){
+    const opts = st===1 ? [right, `Я ${ty}`] : [right, `Я ${ty}`, `Ты ${ty}`];
+    present({ty:"mine", label:`${q} → ${right}`, html:`<span>${esc(q)}</span><span class="blank">?</span>`, speech:q, right, cls:"plain", okSay:`Ты ${ty}? — Да, я ${ya}!`, errSay:`Про себя говорим: я ${ya}. Ты ${ty}? — Я ${ya}!`, opts});
+    return;
+  }
+  busy=false; cur.ty="mine"; cur.speech=q;
+  cur.render=state=>setCard(`<span class="chip" style="background:#AD1457">ОТВЕТЬ</span><span>${esc(q)}</span>`, state); cur.render();
+  const shown = st===1 ? right : (st===2 ? "Я …" : "");
+  storyJudge(shown?esc(shown):"Ответ скрыт.", !shown, [["jSelf",gx("Сказал сам","Сказала сама"),"self"],["jHelp","С подсказкой","help"],["jNo",gx("Не сказал","Не сказала"),""]]);
+  const done=(kind, said)=>{ if(busy) return; busy=true; $("model").textContent=right; $("model").classList.remove("empty");
+    const ok=kind==="self"; cur.render(ok?"ok":(kind==="no"?"err":null)); say(`Ты ${ty}? — Да, я ${ya}!`);
+    if(ok) onRightFx($("jMic"));
+    logIt("mine","mine",`${q} → ${right}`, cur.voice?`голосом: «${cur.voice}»`:({self:gx("сам","сама"),help:"с подсказкой",no:gx("не сказал","не сказала")})[kind], ok);
+    if(ok){ win("mine"); whenQuiet(afterWin,1200); } else { if(kind==="no") lose("mine"); else neutral("mine"); whenQuiet(()=>nextTask(),1200); } };
+  holdBtn($("jSelf"),()=>done("self")); holdBtn($("jHelp"),()=>done("help")); holdBtn($("jNo"),()=>done("no"));
+  const mic=$("jMic"), heard=$("jHeard");
+  mic.onclick=()=>{ if(busy) return; if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
+    mic.classList.add("listening"); heard.textContent="Слушаю…"; sfx("tap");
+    listen(alts=>{ mic.classList.remove("listening"); if(busy) return;
+      const b=bestSpeech(right, alts); heard.textContent=`Услышал: «${b.t}»`;
+      if(b.perfect){ cur.voice=b.t; done("self"); return; }
+      const echo = alts.some(a=>String(a).toLowerCase().includes(ty.replace("ё","е")) || String(a).toLowerCase().includes(ty));
+      if(echo){ $("model").innerHTML=`${esc(right)}<span class="said">Ты ${gx("сказал","сказала")}: «${esc(b.t)}». Про себя говорим: я ${esc(ya)}.</span>`; $("model").classList.remove("empty"); say(`Про себя говорим: я ${ya}.`);
+        logIt("mine","sayTry",`${q} → ${right}`, `голосом: «${b.t}» — повтор формы вопроса`, false); }
+      heard.textContent+=". Скажи еще раз."; mascot("oops","Еще раз!");
+    }, err=>{ mic.classList.remove("listening"); if(!busy) heard.textContent=micFail(err); });
+  };
+  say(q);
 }
 
 /* ================= 12. «Я хочу…» — whole phrases by voice ================= */
@@ -2846,7 +2883,14 @@ function renderVoiceSel(){ const sel=$("voiceSel"), vs=ruVoices(); pickVoice();
     sel.onchange=()=>{ S.voiceName=sel.value||null; pickVoice(); save(); say("Положи мяч на стол. Что лишнее?"); }; }
 /* ================= Полная версия (разовая покупка в App Store) ================= */
 const FULL_ID="kz.alan.speechcards.full";
-const IAP = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.registerPlugin) ? window.Capacitor.registerPlugin("NativePurchases") : null;
+/* native plugin without @capacitor/core: the iOS bridge only offers nativePromise/addListener, so build a small proxy */
+function capPlugin(name){ const C=window.Capacitor; if(!C || !C.isNativePlatform || !C.isNativePlatform()) return null;
+  if(C.registerPlugin) return C.registerPlugin(name);
+  if(!C.nativePromise) return null;
+  return new Proxy({}, {get:(t,m)=>{ if(m==="then") return undefined;
+    if(m==="addListener") return (ev,cb)=>Promise.resolve(C.addListener(name, ev, cb));
+    return opts=>C.nativePromise(name, String(m), opts||{}); }}); }
+const IAP = capPlugin("NativePurchases");
 let buyPrice="", buyBusy=false, buyMsg="";
 function unlockFull(){ if(S.full) return; S.full=true; S.need=0; save(); if(!$("parent").hidden) renderParent(); }
 function checkOwned(){ if(!IAP) return Promise.resolve(false);
