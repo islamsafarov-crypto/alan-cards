@@ -84,6 +84,8 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .ans.who{border-color:var(--who);background:#FFF3E3}
 .ans.does{border-color:var(--does);background:#FFF9DC}
 .ans.plain{border-color:#7E57C2;background:#F3EEFC}
+.m-gone{opacity:.35;transition:opacity .8s}
+.ans.digit{border-color:#00796B;background:#E0F2F1;font-size:clamp(34px,6vw,52px);padding:10px 6px}
 .ans.right{background:var(--ok-soft);border-color:var(--ok)}
 .ans.wrong{background:var(--err-soft);border-color:var(--err);animation:shake .35s}
 .ans.hint{border-color:var(--ok);border-style:dashed;border-width:4px}
@@ -840,6 +842,10 @@ const TRACKS = {
   count:{title:"Один, два, много", c:"#5E35B1", b:"#EDE7F6", sub:"Два мяча, пять мячей; он спал — она спала.", chips:[["2","#5E35B1"],["5","#5E35B1"]],
     stages:"1 — два варианта; 2 и 3 — три варианта, на 3 текст только на слух.",
     levels:[{name:"Один или много", kind:"onemany"},{name:"Два, три, четыре", kind:"few"},{name:"Пять, шесть", kind:"five"},{name:"От одного до шести", kind:"all"},{name:"Он спал — она спала", kind:"past"}]},
+  math:{title:"Считаем", c:"#00796B", b:"#E0F2F1", sub:"Сколько? Плюс и минус до десяти — с картинками и пальчиками.", chips:[["2+3","#00796B"]],
+    stages:"1 — два варианта ответа; 2 — три; 3 — четыре. На уровне «Без картинок» при ошибке и на этапе 1 видны пальчики.",
+    levels:[{name:"Сколько? (до 10)", kind:"howmany"},{name:"Плюс до 5 (картинки)", kind:"add", max:5},{name:"Плюс до 10 (картинки)", kind:"add", max:10},
+      {name:"Минус до 10 (картинки)", kind:"sub", max:10},{name:"Плюс и минус без картинок (пальчики)", kind:"mix", max:10},{name:"Сколько не хватает до 10?", kind:"to10"}]},
   odd:{title:"Что лишнее?", c:"#00838F", b:"#E0F7FA", sub:"Найди лишнюю картинку и назови группу.", chips:[["ЛИШНЕЕ","#00838F"]],
     stages:"1 и 2 — под картинками подписи; 3 — только картинки. На уровне 5 подсказка-слово видна на этапе 1.",
     levels:[{name:"3 картинки, разные группы", n:3},{name:"4 картинки", n:4},{name:"4 картинки, похожие группы (фрукты и овощи)", n:4, close:1},
@@ -847,7 +853,7 @@ const TRACKS = {
 };
 const TRACK_KEYS = Object.keys(TRACKS);
 const mainType = (tr, L) => tr==="q" ? TRACKS.q.levels[L-1].main : tr;
-const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", odd:"Что лишнее?", listen:"Слушай и делай", mine:"Я, ты, он, она", want:"Я хочу…", why:"Почему? Зачем?", count:"Один, два, много", storyQ:"История: вопрос", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", storyQ:"История: вопрос", storyOrd:"История: порядок", day:"Мой день", read:"Читаем"};
+const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", odd:"Что лишнее?", listen:"Слушай и делай", mine:"Я, ты, он, она", want:"Я хочу…", why:"Почему? Зачем?", count:"Один, два, много", math:"Считаем", storyQ:"История: вопрос", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", storyQ:"История: вопрос", storyOrd:"История: порядок", day:"Мой день", read:"Читаем"};
 const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
 
 /* ================= state ================= */
@@ -996,6 +1002,7 @@ function chipArt(chips){ let x=10; return chips.map(([t,c])=>{ const w=18+t.leng
 /* big pictures for the home tiles (viewBox 0 0 200 140) */
 const G=(x,y,sc,inner)=>`<g transform="translate(${x},${y}) scale(${sc})">${inner}</g>`;
 const TILE_ART = {
+  math: ()=>G(52,62,.42,OBJ("apple").svg)+G(150,62,.42,OBJ("apple").svg)+G(176,62,.42,OBJ("apple").svg)+`<text x="100" y="80" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="44" fill="#fff">+</text><text x="100" y="140" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="42" fill="#fff">1+2=3</text>`,
   pred: ()=>`<rect x="38" y="74" width="10" height="56" rx="3" fill="#8D5A2B"/><rect x="152" y="74" width="10" height="56" rx="3" fill="#8D5A2B"/><rect x="28" y="64" width="144" height="14" rx="5" fill="#C98545"/>`+G(100,42,.55,OBJ("ball").svg)+G(100,112,.42,OBJ("cube").svg),
   q:    ()=>G(78,82,.62,charSvg("cat"))+`<circle cx="150" cy="44" r="34" fill="#fff"/><path d="M128,70 l-8,16 l20,-10Z" fill="#fff"/><text x="150" y="60" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="46" fill="#12A84A">?</text>`,
   sent: ()=>[["КОТ","#F57C00",12,88],["ЕСТ","#E0A800",70,88],["СЫР","#12A84A",128,88]].map(([t,c,x,y],i)=>`<g transform="rotate(${[-6,3,-3][i]} ${x+30} ${y-i*10})"><rect x="${x}" y="${y-i*14}" width="60" height="44" rx="9" fill="${c}" stroke="#fff" stroke-width="4"/><text x="${x+30}" y="${y-i*14+30}" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="20" fill="#fff">${t}</text></g>`).join("")+G(150,34,.42,OBJ("apple").svg),
@@ -1012,7 +1019,7 @@ const TILE_ART = {
   read: ()=>`<path d="M100,40 Q70,24 24,30 V118 Q70,112 100,126Z" fill="#fff"/><path d="M100,40 Q130,24 176,30 V118 Q130,112 100,126Z" fill="#F5F5F5"/><path d="M100,40 V126" stroke="#D7CCC8" stroke-width="3"/><text x="62" y="92" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#E53935">А</text><text x="138" y="92" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#1E88E5">Б</text>`
 };
 const TILE_COL = {pred:["#3A8DFF","#9CC8FF","#1452C4"], q:["#2EBF5E","#A7EDB9","#14853B"], sent:["#FF9A1F","#FFD49B","#C26200"], form:["#F2407D","#FFB3CE","#B3124D"],
-  say:["#9467E0","#D3BCFA","#5E35B1"], day:["#14A898","#9EE6DC","#00695C"], kakoy:["#E84545","#FFB0A8","#A61D1D"], odd:["#14B3C4","#A6EEF5","#00838F"], listen:["#1E9BE0","#A9DDFA","#0263A0"], mine:["#D63A7A","#FFB1CF","#8E1047"], want:["#F0507F","#FFC0D3","#B0124A"], why:["#9C7A5A","#E3CDB8","#5B3F2A"], count:["#7E57C2","#D7C6F7","#4527A0"], read:["#A0775E","#E2C6B2","#5D4037"]};
+  say:["#9467E0","#D3BCFA","#5E35B1"], day:["#14A898","#9EE6DC","#00695C"], kakoy:["#E84545","#FFB0A8","#A61D1D"], odd:["#14B3C4","#A6EEF5","#00838F"], listen:["#1E9BE0","#A9DDFA","#0263A0"], mine:["#D63A7A","#FFB1CF","#8E1047"], want:["#F0507F","#FFC0D3","#B0124A"], why:["#9C7A5A","#E3CDB8","#5B3F2A"], count:["#7E57C2","#D7C6F7","#4527A0"], math:["#14A88E","#A6EBDD","#00695C"], read:["#A0775E","#E2C6B2","#5D4037"]};
 function renderHome(){
   const h=$("home");
   const lvlShort = k => `Ур. ${S.lvl[k]}`;
@@ -1127,7 +1134,7 @@ $("tanksClose").onclick=()=>{ $("tanks").hidden=true; };
 $("findsClose").onclick=()=>{ $("finds").hidden=true; renderHome(); };
 
 /* ================= common question flow ================= */
-function nextTask(repeat){ busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("off","m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } ({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask, odd:oddTask, listen:listenTask, mine:mineTask, want:wantTask, why:whyTask, count:countTask})[mode](repeat); }
+function nextTask(repeat){ busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("off","m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } ({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask, odd:oddTask, listen:listenTask, mine:mineTask, want:wantTask, why:whyTask, count:countTask, math:mathTask})[mode](repeat); }
 function present(cfg){ // cfg: {ty, html, speech, right, opts, cls, okSay, errSay, hide, fmt}
   Object.assign(cur, cfg);
   const st=S.st[mode];
@@ -1908,7 +1915,7 @@ const OBJ_G = {ball:"m", apple:"n", bear:"m", tank:"m", car:"f", cube:"m", book:
 const CH_G = {cat:"m", dog:"f", bear:"m"};
 const chOf = id => CHARS.find(c=>c.id===id);
 const NUM_OBJ = {ball:["мяч","мяча","мячей"], apple:["яблоко","яблока","яблок"], cube:["кубик","кубика","кубиков"], banana:["банан","банана","бананов"], car:["машинка","машинки","машинок"], candy:["конфета","конфеты","конфет"], book:["книга","книги","книг"], tank:["танк","танка","танков"]};
-const NUM_W = {1:{m:"один",f:"одна",n:"одно"}, 2:{m:"два",f:"две",n:"два"}, 3:"три", 4:"четыре", 5:"пять", 6:"шесть"};
+const NUM_W = {1:{m:"один",f:"одна",n:"одно"}, 2:{m:"два",f:"две",n:"два"}, 3:"три", 4:"четыре", 5:"пять", 6:"шесть", 7:"семь", 8:"восемь", 9:"девять", 10:"десять"};
 const numWord = (n,g) => typeof NUM_W[n]==="string" ? NUM_W[n] : NUM_W[n][g];
 const VERB_P = { spit:["сплю","спишь","спит","спал","спала"], sidit:["сижу","сидишь","сидит","сидел","сидела"], begaet:["бегу","бежишь","бежит","бежал","бежала"],
   est:["ем","ешь","ест","ел","ела"], pyet:["пью","пьешь","пьет","пил","пила"], chitaet:["читаю","читаешь","читает","читал","читала"] };
@@ -2046,6 +2053,88 @@ function countTask(repeat){
   else { right=`${numWord(n,g)} ${many}`; wrong=[`${numWord(n,g)} ${few}`, `${numWord(n,g)} ${one}`]; }
   const opts=st===1?[right,wrong[0]]:[right,...wrong];
   present({ty:"count", label:`Сколько? (${one})`, html:`<span class="chip" style="background:#5E35B1">СКОЛЬКО</span><span>${n==="many"||n===1?"Один или много?":"Сколько?"}</span>`, speech:`Сколько?`, right:cap(right), cls:"plain", okSay:cap(right), opts:opts.map(cap), fmt:endingFmt(opts.map(cap))});
+}
+
+/* ================= 16. math: count, add, subtract within 10 (ten-frame + fingers) ================= */
+const MATH_OBJ = ["apple","ball","cube","tank","car","candy","banana","book"];
+const nForm = (id,n) => { const f=NUM_OBJ[id]; const m=n%10, h=n%100; return (m===1&&h!==11)?f[0]:(m>=2&&m<=4&&(h<10||h>20))?f[1]:f[2]; };
+const nW = n => n===0 ? "ноль" : numWord(n,"m");
+const nWg = (n,id) => numWord(n, OBJ_G[id]||"m");
+/* ten-frame: 2 rows × 5 cells; marks: array of {id, tint, gone} for filled cells */
+function tenFrame(marks, y0, hiFrom){
+  const cw=112, x0=500-cw*2.5; let g=`<rect x="${x0-14}" y="${y0-14}" width="${cw*5+28}" height="${cw*2+28}" rx="22" fill="#fff" stroke="#80CBC4" stroke-width="5"/>`;
+  for(let i=0;i<10;i++){ const c=i%5, r=Math.floor(i/5), x=x0+c*cw, y=y0+r*cw, m=marks[i];
+    const fill = m ? (m.tint==="b"?"#FFCC80":"#80CBC4") : (hiFrom!=null && i>=hiFrom ? "#FFF8E1" : "#F5F5F5");
+    const stroke = !m && hiFrom!=null && i>=hiFrom ? "#FFB300" : "#B0BEC5";
+    g+=`<rect x="${x+5}" y="${y+5}" width="${cw-10}" height="${cw-10}" rx="16" fill="${fill}" stroke="${stroke}" stroke-width="${!m&&hiFrom!=null&&i>=hiFrom?4:2}" ${!m&&hiFrom!=null&&i>=hiFrom?'stroke-dasharray="10 8"':""}/>`;
+    if(m) g+=`<g class="${m.gone?"m-gone":""}" transform="translate(${x+cw/2},${y+cw/2}) scale(.95)">${OBJ(m.id).svg}</g>`+(m.gone?`<g class="m-x" transform="translate(${x+cw/2},${y+cw/2})"><path d="M-34,-34 L34,34 M34,-34 L-34,34" stroke="#E53935" stroke-width="11" stroke-linecap="round"/></g>`:"");
+  }
+  return g;
+}
+/* two hands; up[i] = fingers raised on each hand (0–5), dim[i] = how many of the raised ones are crossed out (shown grey) */
+function handsSvg(up, dim, y){
+  const hand=(cx, n, d, flip)=>{ let g=`<g transform="translate(${cx},${y}) scale(${flip?-1:1},1)">`;
+    g+=`<rect x="-64" y="8" width="128" height="108" rx="44" fill="#FFCC9E" stroke="#C98A5A" stroke-width="5"/>`;
+    /* order of raising: index, middle, ring, little, thumb */
+    const F=[{x:-50,h:96},{x:-24,h:112},{x:2,h:104},{x:28,h:84},{thumb:1}];
+    F.forEach((f,i)=>{ const up=i<n, grey=up && i>=n-d, fill=grey?"#E0E0E0":"#FFCC9E";
+      if(f.thumb) g+= up ? `<rect x="50" y="-10" width="26" height="74" rx="13" transform="rotate(34 63 27)" fill="${fill}" stroke="#C98A5A" stroke-width="5"/>`
+                          : `<rect x="44" y="38" width="26" height="40" rx="13" transform="rotate(34 57 58)" fill="#F4B886" stroke="#C98A5A" stroke-width="5"/>`;
+      else g+= up ? `<rect x="${f.x}" y="${14-f.h}" width="24" height="${f.h+20}" rx="12" fill="${fill}" stroke="#C98A5A" stroke-width="5"/>`
+                  : `<rect x="${f.x}" y="0" width="24" height="32" rx="12" fill="#F4B886" stroke="#C98A5A" stroke-width="5"/>`;
+      if(grey && !f.thumb) g+=`<path d="M${f.x-4},${14-f.h+10} L${f.x+28},${14-f.h+44} M${f.x+28},${14-f.h+10} L${f.x-4},${14-f.h+44}" stroke="#E53935" stroke-width="6" stroke-linecap="round"/>`;
+    });
+    return g+`</g>`; };
+  return `<g transform="translate(500,${y+40}) scale(1.35) translate(-500,${-(y+40)})">`+hand(360, up[0], dim[0], true) + hand(640, up[1], dim[1], false)+`</g>`;
+}
+function mathPick(L){
+  const r=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  if(L.kind==="howmany"){ const n=r(1,10); return {op:"n", a:n, ans:n}; }
+  if(L.kind==="add"){ const sum=r(2,L.max), a=r(1,sum-1); return {op:"+", a, b:sum-a, ans:sum}; }
+  if(L.kind==="sub"){ const a=r(2,L.max), b=r(1,a-1); return {op:"-", a, b, ans:a-b}; }
+  if(L.kind==="to10"){ const a=r(1,9); return {op:"to10", a, b:10-a, ans:10-a}; }
+  /* mix: plus with both parts ≤5 (one hand each), or minus within 10 */
+  if(Math.random()<.5){ const a=r(1,5), b=r(1,5); return {op:"+", a, b, ans:a+b}; }
+  const a=r(2,10), b=r(1,Math.min(5,a-1)); return {op:"-", a, b, ans:a-b};
+}
+function mathTask(repeat){
+  const L=TRACKS.math.levels[S.lvl.math-1], st=S.st.math;
+  if(!repeat || !cur || cur.kind!=="math"){
+    const t=mathPick(L); const id=rnd(MATH_OBJ);
+    cur={kind:"math", id, ...t, lk:L.kind};
+  } else cur.mistake=true;
+  const {id,a,b,ans,op}=cur, kind=L.kind;
+  cur.wkey="math:"+kind+":"+op;
+  clearScene(); room(false);
+  let g="", eq="", speech="", okSay="";
+  const big=(t,y,col)=>`<text x="500" y="${y}" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="92" fill="${col||"#00695C"}">${t}</text>`;
+  if(kind==="howmany"){
+    const marks=[...Array(10)].map((_,i)=>i<a?{id}:null); g=tenFrame(marks,190);
+    speech=`Сколько ${NUM_OBJ[id][2]}?`; okSay=`${cap(nWg(a,id))} ${nForm(id,a)}!`; eq="Сколько?";
+  } else if(kind==="add"){
+    const marks=[...Array(10)].map((_,i)=>i<a?{id}:(i<a+b?{id,tint:"b"}:null)); g=tenFrame(marks,190)+big(`${a} + ${b} = ?`,120);
+    speech=`${cap(nWg(a,id))} ${nForm(id,a)} и ещё ${nWg(b,id)}. Сколько всего?`; okSay=`${cap(nW(a))} плюс ${nW(b)} — ${nW(ans)}!`; eq=`${a} + ${b} = ?`;
+  } else if(kind==="sub"){
+    const marks=[...Array(10)].map((_,i)=>i<a?{id, gone:i>=a-b}:null); g=tenFrame(marks,190)+big(`${a} − ${b} = ?`,120);
+    speech=`Было ${nWg(a,id)} ${nForm(id,a)}. ${cap(nWg(b,id))} убрали. Сколько осталось?`; okSay=`${cap(nW(a))} минус ${nW(b)} — ${nW(ans)}!`; eq=`${a} − ${b} = ?`;
+  } else if(kind==="to10"){
+    const marks=[...Array(10)].map((_,i)=>i<a?{id}:null); g=tenFrame(marks,190,a)+big(`${a} + ? = 10`,120);
+    speech=`Здесь ${nWg(a,id)} ${nForm(id,a)}. Сколько не хватает до десяти?`; okSay=`${cap(nW(a))} и ${nW(ans)} — десять!`; eq=`${a} + ? = 10`;
+  } else { /* mix: no pictures; fingers on stage 1 or after a mistake */
+    eq = op==="+" ? `${a} + ${b} = ?` : `${a} − ${b} = ?`;
+    g = big(eq, 170, "#004D40");
+    if(st===1 || cur.mistake){
+      if(op==="+") g+=handsSvg([a,b],[0,0],380);
+      else { const l=Math.min(5,a), rr=a-l; /* fold b fingers from the right hand first */ const dr=Math.min(b,rr), dl=b-dr; g+=handsSvg([l,rr],[dl,dr],380); }
+      g+=`<text x="500" y="588" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="700" font-size="28" fill="#8D6E63">Пальчики</text>`;
+    }
+    speech = op==="+" ? `Сколько будет ${nW(a)} плюс ${nW(b)}?` : `Сколько будет ${nW(a)} минус ${nW(b)}?`;
+    okSay = op==="+" ? `${cap(nW(a))} плюс ${nW(b)} — ${nW(ans)}!` : `${cap(nW(a))} минус ${nW(b)} — ${nW(ans)}!`;
+  }
+  $("sBack").innerHTML=g;
+  const n=nOpts(st,2,3,4), pool=[]; for(let d=1; pool.length<n-1 && d<6; d++){ [ans+d, ans-d].forEach(v=>{ if(v>=0 && v<=10 && pool.length<n-1 && Math.random()<.8) pool.push(v); }); }
+  for(let v=0; pool.length<n-1 && v<=10; v++) if(v!==ans && !pool.includes(v)) pool.push(v);
+  present({ty:"math", label:eq, html:`<span class="chip" style="background:#00796B">СЧИТАЕМ</span><span>${eq}</span>`, speech, right:String(ans), cls:"digit", okSay, opts:[String(ans), ...pool.map(String)], hide:false});
 }
 
 /* ================= report for the speech therapist ================= */
