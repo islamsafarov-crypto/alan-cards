@@ -2931,6 +2931,10 @@ if(!IS_NATIVE){
   const sha=t=>crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)).then(b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""));
   const norm=t=>String(t||"").trim().toUpperCase().replace(/\s+/g,"");
   const loadList=()=>fetch("web-codes.txt?v="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():Promise.reject()).then(t=>t.split(/\s+/).filter(x=>/^[0-9a-f]{64}$/.test(x)));
+  const DEVK="alan-web-dev"; let dev=""; try{ dev=localStorage.getItem(DEVK)||""; if(!dev){ dev=[...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toString(36).padStart(2,"0")).join("").slice(0,20); localStorage.setItem(DEVK,dev); } }catch(e){ dev="nostorage0"+Date.now(); }
+  /* the server counts devices per code (max 5); if it can't be reached, let the person in */
+  const devOk=h=>fetch(`https://alan-tts.islam-safarov.workers.dev/web/check?c=${h}&d=${dev}`,{cache:"no-store"}).then(r=>r.json()).then(j=>j.ok!==false).catch(()=>true);
+  const LIMIT_MSG="Этот код уже используется на максимальном числе устройств. Обратитесь к тому, кто дал вам код.";
   const ok=()=>{ S.full=true; S.need=0; save(); const g=document.getElementById("webGate"); if(g) g.remove(); };
   const lock=()=>{ S.full=false; save(); showGate(); };
   const showGate=(msg)=>{ let g=document.getElementById("webGate");
@@ -2943,13 +2947,13 @@ if(!IS_NATIVE){
       <p id="webMsg" style="color:#c62828;min-height:20px;margin:10px 0 0;font-size:14px">${msg||""}</p>
       <p style="margin:8px 0 0;font-size:13px;color:#777">Для домашних занятий — <a href="${APPSTORE_URL}" target="_blank" rel="noopener">приложение ALAN в App Store</a>.</p></div>`;
     const go=()=>{ const c=norm(document.getElementById("webCode").value); if(!c) return;
-      Promise.all([sha(c), loadList()]).then(([h,list])=>{ if(list.includes(h)){ try{localStorage.setItem(KEY,c);}catch(e){} ok(); } else document.getElementById("webMsg").textContent="Код не подошёл. Проверьте и попробуйте ещё раз."; })
+      Promise.all([sha(c), loadList()]).then(([h,list])=>{ if(list.includes(h)){ devOk(h).then(good=>{ if(!good){ document.getElementById("webMsg").textContent=LIMIT_MSG; return; } try{localStorage.setItem(KEY,c);}catch(e){} ok(); }); } else document.getElementById("webMsg").textContent="Код не подошёл. Проверьте и попробуйте ещё раз."; })
         .catch(()=>{ document.getElementById("webMsg").textContent="Нет связи с сервером. Попробуйте позже."; }); };
     document.getElementById("webGo").onclick=go; document.getElementById("webCode").onkeydown=e=>{ if(e.key==="Enter") go(); };
   };
   let saved=""; try{ saved=localStorage.getItem(KEY)||""; }catch(e){}
   if(!saved) showGate();
-  else Promise.all([sha(saved), loadList()]).then(([h,list])=>{ if(list.includes(h)) ok(); else { try{localStorage.removeItem(KEY);}catch(e){} lock(); } }).catch(()=>{ if(S.full) return; showGate(); });
+  else Promise.all([sha(saved), loadList()]).then(([h,list])=>{ if(list.includes(h)) devOk(h).then(good=>{ if(good) ok(); else { try{localStorage.removeItem(KEY);}catch(e){} S.full=false; save(); showGate(LIMIT_MSG); } }); else { try{localStorage.removeItem(KEY);}catch(e){} lock(); } }).catch(()=>{ if(S.full) return; showGate(); });
   const foot=document.createElement("a"); foot.href=APPSTORE_URL; foot.target="_blank"; foot.rel="noopener"; foot.textContent="Для домашних занятий — ALAN в App Store";
   foot.style.cssText="position:fixed;left:50%;bottom:6px;transform:translateX(-50%);font-size:12px;color:#456;opacity:.75;z-index:50;text-decoration:none;background:rgba(255,255,255,.7);padding:3px 10px;border-radius:10px";
   document.body.appendChild(foot);
