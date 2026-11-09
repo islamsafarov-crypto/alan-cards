@@ -85,6 +85,10 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .ans.does{border-color:var(--does);background:#FFF9DC}
 .ans.plain{border-color:#7E57C2;background:#F3EEFC}
 .m-gone{opacity:.35;transition:opacity .8s}
+.ans.word{border-color:#3949AB;background:#E8EAF6;font-size:clamp(28px,5vw,46px);letter-spacing:.04em;padding:12px 8px}
+.ans.letter{border-color:#EF6C00;background:#FFF3E0;font-size:clamp(40px,7vw,64px);padding:6px}
+.ans.wpic{border-color:#3949AB;background:#fff;padding:6px}
+.ans.wpic svg{width:clamp(80px,14vw,130px);height:clamp(80px,14vw,130px);display:block;margin:auto}
 .ans.digit{border-color:#00796B;background:#E0F2F1;font-size:clamp(34px,6vw,52px);padding:10px 6px}
 .ans.right{background:var(--ok-soft);border-color:var(--ok)}
 .ans.wrong{background:var(--err-soft);border-color:var(--err);animation:shake .35s}
@@ -441,6 +445,10 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
       <h3>Сброс после тестирования</h3>
       <p class="hint-txt">Перед тем как Алан начнет заниматься, сбросьте то, что набрали взрослые. Фото семьи, распорядок дня и настройки голоса не удаляются.</p>
       <div class="row" id="resetRow"></div>
+    </div>
+    <div class="pbox">
+      <h3>Буквы в «Читаем словами» и «Буквы»</h3>
+      <div class="row"><span class="seg" id="caseSeg"></span></div>
     </div>
     <div class="pbox">
       <h3>Миры для «Куда положить?» и «Где?»</h3>
@@ -846,6 +854,12 @@ const TRACKS = {
     stages:"1 — два варианта ответа; 2 — три; 3 — четыре. На уровне «Без картинок» при ошибке и на этапе 1 видны пальчики.",
     levels:[{name:"Сколько? (до 10)", kind:"howmany"},{name:"Плюс до 5 (картинки)", kind:"add", max:5},{name:"Плюс до 10 (картинки)", kind:"add", max:10},
       {name:"Минус до 10 (картинки)", kind:"sub", max:10},{name:"Плюс и минус без картинок (пальчики)", kind:"mix", max:10},{name:"Сколько не хватает до 10?", kind:"to10"}]},
+  words:{title:"Читаем словами", c:"#3949AB", b:"#E8EAF6", sub:"Глобальное чтение: узнаем слово целиком, по картинке.", chips:[["МЯЧ","#3949AB"]],
+    stages:"1 — два варианта; 2 — три; 3 — четыре. Новые слова добавляются постепенно, по мере правильных ответов (по 5 слов).",
+    levels:[{name:"Найди такое же слово", kind:"same"},{name:"Картинка → слово", kind:"pic2w"},{name:"Слово → картинка", kind:"w2pic"}]},
+  letters:{title:"Буквы", c:"#EF6C00", b:"#FFF3E0", sub:"Найди букву; с какой буквы начинается слово.", chips:[["А","#EF6C00"],["Б","#EF6C00"]],
+    stages:"1 — два варианта; 2 — три; 3 — четыре. На уровне 3: на этапе 1 первая буква в слове выделена цветом, на этапе 3 слово не написано — только картинка. Новые буквы добавляются постепенно.",
+    levels:[{name:"Найди такую же букву", kind:"same"},{name:"Услышь и найди букву", kind:"hear"},{name:"С какой буквы начинается слово?", kind:"first"}]},
   odd:{title:"Что лишнее?", c:"#00838F", b:"#E0F7FA", sub:"Найди лишнюю картинку и назови группу.", chips:[["ЛИШНЕЕ","#00838F"]],
     stages:"1 и 2 — под картинками подписи; 3 — только картинки. На уровне 5 подсказка-слово видна на этапе 1.",
     levels:[{name:"3 картинки, разные группы", n:3},{name:"4 картинки", n:4},{name:"4 картинки, похожие группы (фрукты и овощи)", n:4, close:1},
@@ -853,11 +867,11 @@ const TRACKS = {
 };
 const TRACK_KEYS = Object.keys(TRACKS);
 const mainType = (tr, L) => tr==="q" ? TRACKS.q.levels[L-1].main : tr;
-const TYPE_NAMES = {pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", odd:"Что лишнее?", listen:"Слушай и делай", mine:"Я, ты, он, она", want:"Я хочу…", why:"Почему? Зачем?", count:"Один, два, много", math:"Считаем", storyQ:"История: вопрос", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", storyQ:"История: вопрос", storyOrd:"История: порядок", day:"Мой день", read:"Читаем"};
+const TYPE_NAMES = {words:"Читаем словами", letters:"Буквы", pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", odd:"Что лишнее?", listen:"Слушай и делай", mine:"Я, ты, он, она", want:"Я хочу…", why:"Почему? Зачем?", count:"Один, два, много", math:"Считаем", storyQ:"История: вопрос", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", storyQ:"История: вопрос", storyOrd:"История: порядок", day:"Мой день", read:"Читаем"};
 const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
 
 /* ================= state ================= */
-const DEF = {lvl:{}, st:{}, resetAt:{}, worlds:{room:true,pirates:true,space:true,army:true}, autoLevel:true, anim:"many", sfx:true, sound:true, rate:0.85, medals:0, finds:{}, surprise:"some", weak:{}, log:[], day:DAY_ITEMS.map(d=>({id:d.id,on:true}))};
+const DEF = {caseUp:true, wordsOk:0, lettersOk:0, lvl:{}, st:{}, resetAt:{}, worlds:{room:true,pirates:true,space:true,army:true}, autoLevel:true, anim:"many", sfx:true, sound:true, rate:0.85, medals:0, finds:{}, surprise:"some", weak:{}, log:[], day:DAY_ITEMS.map(d=>({id:d.id,on:true}))};
 TRACK_KEYS.forEach(k=>{ DEF.lvl[k]=1; DEF.st[k]=1; DEF.resetAt[k]=0; });
 let S = JSON.parse(JSON.stringify(DEF));
 try{ const raw = localStorage.getItem("alan-cards-v2"); if(raw){ const d=JSON.parse(raw);
@@ -1002,6 +1016,8 @@ function chipArt(chips){ let x=10; return chips.map(([t,c])=>{ const w=18+t.leng
 /* big pictures for the home tiles (viewBox 0 0 200 140) */
 const G=(x,y,sc,inner)=>`<g transform="translate(${x},${y}) scale(${sc})">${inner}</g>`;
 const TILE_ART = {
+  letters:()=>[["А",62,84,-8],["Б",138,74,6],["М",100,124,-3]].map(([t,x,y,r])=>`<g transform="rotate(${r} ${x} ${y-24})"><rect x="${x-30}" y="${y-58}" width="60" height="64" rx="12" fill="#fff"/><text x="${x}" y="${y-6}" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="46" fill="#E65100">${S.caseUp===false?t.toLowerCase():t}</text></g>`).join(""),
+  words:()=>G(58,70,1,ipic("ball",92))+`<rect x="104" y="44" width="86" height="52" rx="12" fill="#fff"/><text x="147" y="82" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="30" fill="#283593">${S.caseUp===false?"мяч":"МЯЧ"}</text>`,
   math: ()=>G(52,62,.42,OBJ("apple").svg)+G(150,62,.42,OBJ("apple").svg)+G(176,62,.42,OBJ("apple").svg)+`<text x="100" y="80" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="44" fill="#fff">+</text><text x="100" y="140" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="42" fill="#fff">1+2=3</text>`,
   pred: ()=>`<rect x="38" y="74" width="10" height="56" rx="3" fill="#8D5A2B"/><rect x="152" y="74" width="10" height="56" rx="3" fill="#8D5A2B"/><rect x="28" y="64" width="144" height="14" rx="5" fill="#C98545"/>`+G(100,42,.55,OBJ("ball").svg)+G(100,112,.42,OBJ("cube").svg),
   q:    ()=>G(78,82,.62,charSvg("cat"))+`<circle cx="150" cy="44" r="34" fill="#fff"/><path d="M128,70 l-8,16 l20,-10Z" fill="#fff"/><text x="150" y="60" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="46" fill="#12A84A">?</text>`,
@@ -1018,7 +1034,7 @@ const TILE_ART = {
   count:()=>[[40,60],[90,60],[140,60],[65,108],[115,108]].map(([x,y])=>G(x,y,.48,OBJ("apple").svg)).join("")+`<text x="176" y="128" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#fff">5</text>`,
   read: ()=>`<path d="M100,40 Q70,24 24,30 V118 Q70,112 100,126Z" fill="#fff"/><path d="M100,40 Q130,24 176,30 V118 Q130,112 100,126Z" fill="#F5F5F5"/><path d="M100,40 V126" stroke="#D7CCC8" stroke-width="3"/><text x="62" y="92" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#E53935">А</text><text x="138" y="92" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#1E88E5">Б</text>`
 };
-const TILE_COL = {pred:["#3A8DFF","#9CC8FF","#1452C4"], q:["#2EBF5E","#A7EDB9","#14853B"], sent:["#FF9A1F","#FFD49B","#C26200"], form:["#F2407D","#FFB3CE","#B3124D"],
+const TILE_COL = {letters:["#FB8C00","#FFD8A8","#B85600"], words:["#5C6BC0","#C5CAE9","#283593"], pred:["#3A8DFF","#9CC8FF","#1452C4"], q:["#2EBF5E","#A7EDB9","#14853B"], sent:["#FF9A1F","#FFD49B","#C26200"], form:["#F2407D","#FFB3CE","#B3124D"],
   say:["#9467E0","#D3BCFA","#5E35B1"], day:["#14A898","#9EE6DC","#00695C"], kakoy:["#E84545","#FFB0A8","#A61D1D"], odd:["#14B3C4","#A6EEF5","#00838F"], listen:["#1E9BE0","#A9DDFA","#0263A0"], mine:["#D63A7A","#FFB1CF","#8E1047"], want:["#F0507F","#FFC0D3","#B0124A"], why:["#9C7A5A","#E3CDB8","#5B3F2A"], count:["#7E57C2","#D7C6F7","#4527A0"], math:["#14A88E","#A6EBDD","#00695C"], read:["#A0775E","#E2C6B2","#5D4037"]};
 function renderHome(){
   const h=$("home");
@@ -1134,7 +1150,7 @@ $("tanksClose").onclick=()=>{ $("tanks").hidden=true; };
 $("findsClose").onclick=()=>{ $("finds").hidden=true; renderHome(); };
 
 /* ================= common question flow ================= */
-function nextTask(repeat){ busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("off","m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } ({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask, odd:oddTask, listen:listenTask, mine:mineTask, want:wantTask, why:whyTask, count:countTask, math:mathTask})[mode](repeat); }
+function nextTask(repeat){ busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("off","m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } ({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask, odd:oddTask, listen:listenTask, mine:mineTask, want:wantTask, why:whyTask, count:countTask, math:mathTask, words:wordsTask, letters:lettersTask})[mode](repeat); }
 function present(cfg){ // cfg: {ty, html, speech, right, opts, cls, okSay, errSay, hide, fmt}
   Object.assign(cur, cfg);
   const st=S.st[mode];
@@ -2342,6 +2358,88 @@ function kakoyTask(repeat){
 }
 
 /* ================= 7. reading ================= */
+const _fresh = {};
+function freshPick(list, keyOf){ const k=keyOf(list[0]).split(":")[0], last=_fresh[k]||[]; const ok=list.filter(x=>!last.includes(keyOf(x))); const t=rnd(ok.length?ok:list);
+  _fresh[k]=[keyOf(t), ...last].slice(0, Math.max(1, Math.min(3, list.length-2))); return t; }
+/* ================= «Читаем словами» (глобальное чтение) ================= */
+const WORD_SETS = [
+  [["МЯЧ","ball"],["КОТ","cat"],["ТАНК","tank"],["МИШКА","bear"],["БАНАН","banana"]],
+  [["МАШИНА","car"],["КНИГА","book"],["СОБАКА","dog"],["ЗАЯЦ","hare"],["СТУЛ","chair"]],
+  [["ЯБЛОКО","apple"],["ЧАШКА","cup"],["АВТОБУС","bus"],["ЗВЕЗДА","star"],["РОБОТ","robot"]],
+  [["КОРОВА","cow"],["ПОЕЗД","train"],["КРОВАТЬ","bed"],["СТОЛ","table"],["ЛИМОН","lemon"]]
+].map(set=>set.map(([w,pic])=>({w,pic})));
+const WORDS_ALL = WORD_SETS.flat();
+const wordSets = () => Math.min(WORD_SETS.length, 1+Math.floor((S.wordsOk||0)/12));
+const wc = w => S.caseUp===false ? w.toLowerCase() : w;
+const wpic = (pic, z) => ipic(pic, z);
+const wordOf = w => WORDS_ALL.find(x=>x.w===w);
+function bigWord(w, y, size){ const fs=size||130, wd=Math.max(260, wc(w).length*fs*.72+80);
+  return `<rect x="${500-wd/2}" y="${y-fs*.95}" width="${wd}" height="${fs*1.35}" rx="28" fill="#fff" stroke="#C5CAE9" stroke-width="6"/><text x="500" y="${y}" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="${fs}" letter-spacing="6" fill="#283593">${esc(wc(w))}</text>`; }
+function wordsTask(repeat){
+  const L=TRACKS.words.levels[S.lvl.words-1], st=S.st.words, n=wordSets();
+  const pool=WORD_SETS.slice(0,n).flat();
+  if(!repeat || !cur || cur.kind!=="words"){
+    /* новые слова чаще: половина заданий — из последнего открытого набора */
+    const src = n>1 && Math.random()<.5 ? WORD_SETS[n-1] : pool;
+    const t=freshPick(src, x=>"w:"+x.w);
+    const others=shuffle(pool.filter(x=>x.w!==t.w)).slice(0, nOpts(st,1,2,3));
+    cur={kind:"words", t, opts:[t.w, ...others.map(x=>x.w)]};
+  } else cur.mistake=true;
+  const {t}=cur, kind=L.kind; cur.wkey="words:"+t.w;
+  clearScene(); room(false);
+  const word=t.w.toLowerCase();
+  let html, speech, errSay, cls="word", fmt=w=>esc(wc(w));
+  if(kind==="same"){
+    $("sBack").innerHTML = `<g transform="translate(500,215)">${wpic(t.pic,270)}</g>` + bigWord(t.w, 520, 110);
+    html=`Найди такое же слово`; speech=`Это ${word}. Найди такое же слово.`; errSay=`Вот такое же: ${word}.`;
+  } else if(kind==="pic2w"){
+    $("sBack").innerHTML = `<g transform="translate(500,300)">${wpic(t.pic,400)}</g>`;
+    html=`Найди слово к картинке`; speech=`Найди слово.`; errSay=`Здесь написано: ${word}.`;
+  } else {
+    $("sBack").innerHTML = bigWord(t.w, 350, 150);
+    html=`Найди картинку`; speech = st===1 ? `${cap(word)}. Найди картинку.` : `Что здесь написано? Найди картинку.`; errSay=`Это ${word}.`;
+    cls="wpic"; fmt=w=>`<svg viewBox="-62 -62 124 124" aria-label="картинка">${wpic(wordOf(w).pic,116)}</svg>`;
+  }
+  present({ty:"words", label:`${L.name}: ${t.w}`, html:`<span>${html}</span>`, speech, right:t.w, cls, fmt, opts:cur.opts, okSay:`${cap(word)}!`, errSay, hide:false, noRead:true});
+  cur.onRight=()=>{ if(!cur.mistake) S.wordsOk=(S.wordsOk||0)+1; };
+}
+/* ================= «Буквы» ================= */
+/* сначала буквы, с которых начинаются слова из «Читаем словами», потом остальные */
+const LETTER_ORDER = ["М","К","Т","Б","С","З","А","Р","Я","Ч","П","Л","О","У","И","Н","Д","В","Г","Е","Ж","Ф","Х","Ц","Ш","Щ","Э","Ю","Ё","Ы","Й"];
+/* как Вера называет букву: как в логопедии — звуком (мэ, бэ), а не «эм», «бэ» по-школьному */
+const LETTER_SAY = {А:"а",Б:"бэ",В:"вэ",Г:"гэ",Д:"дэ",Е:"е",Ё:"ё",Ж:"жэ",З:"зэ",И:"и",Й:"и краткое",К:"кэ",Л:"лэ",М:"мэ",Н:"нэ",О:"о",П:"пэ",Р:"рэ",С:"сэ",Т:"тэ",У:"у",Ф:"фэ",Х:"хэ",Ц:"цэ",Ч:"чэ",Ш:"шэ",Щ:"щэ",Ы:"ы",Э:"э",Ю:"ю",Я:"я"};
+const lettersOpen = () => Math.min(LETTER_ORDER.length, 4 + 2*Math.floor((S.lettersOk||0)/10));
+function lettersTask(repeat){
+  const L=TRACKS.letters.levels[S.lvl.letters-1], st=S.st.letters, kind=L.kind;
+  const open=LETTER_ORDER.slice(0, lettersOpen());
+  if(!repeat || !cur || cur.kind!=="letters"){
+    let t, ch;
+    if(kind==="first"){ const pool=WORD_SETS.slice(0, wordSets()).flat(); t=freshPick(pool, x=>"lf:"+x.w); ch=t.w[0]; }
+    else { const fresh=open.slice(-2); ch = open.length>4 && Math.random()<.4 ? freshPick(fresh, x=>"l:"+x) : freshPick(open, x=>"l:"+x); }
+    const others=shuffle(open.filter(x=>x!==ch)).slice(0, nOpts(st,1,2,3));
+    cur={kind:"letters", t, ch, opts:[ch, ...others]};
+  } else cur.mistake=true;
+  const {t, ch}=cur, nm=LETTER_SAY[ch]; cur.wkey="letters:"+ch;
+  clearScene(); room(false);
+  const card=(x,y,txt,fs,col)=>`<rect x="${x-fs*.55}" y="${y-fs*.92}" width="${fs*1.1}" height="${fs*1.2}" rx="28" fill="#fff" stroke="#FFCC80" stroke-width="6"/><text x="${x}" y="${y}" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="${fs}" fill="${col||"#E65100"}">${esc(wc(txt))}</text>`;
+  let html, speech, okSay, errSay;
+  if(kind==="same"){
+    $("sBack").innerHTML = card(500, 400, ch, 280);
+    html="Найди такую же букву"; speech=`Это буква ${nm}. Найди такую же.`; okSay=`Буква ${nm}!`; errSay=`Вот такая же: ${nm}.`;
+  } else if(kind==="hear"){
+    $("sBack").innerHTML = `<g transform="translate(500,300)"><circle r="150" fill="#FFF3E0" stroke="#FFCC80" stroke-width="6"/><path d="M-70,-40 h40 l60,-50 v180 l-60,-50 h-40Z" fill="#EF6C00"/><path d="M50,-50 q40,50 0,100 M80,-85 q75,85 0,170" stroke="#EF6C00" stroke-width="14" fill="none" stroke-linecap="round"/></g>`;
+    html="Где буква? Послушай"; speech=`Где буква ${nm}?`; okSay=`Да, это ${nm}!`; errSay=`Буква ${nm} — вот она.`;
+  } else {
+    const word=t.w.toLowerCase(), shown=wc(t.w);
+    let g=`<g transform="translate(500,${st===3?300:215})">${wpic(t.pic, st===3?380:270)}</g>`;
+    if(st<3){ const fs=110, wd=Math.max(260, shown.length*fs*.72+80);
+      g+=`<rect x="${500-wd/2}" y="${520-fs*.95}" width="${wd}" height="${fs*1.35}" rx="28" fill="#fff" stroke="#FFCC80" stroke-width="6"/><text x="500" y="520" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="${fs}" letter-spacing="6" fill="#283593"><tspan fill="${st===1?"#E65100":"#283593"}">${esc(shown[0])}</tspan>${esc(shown.slice(1))}</text>`; }
+    $("sBack").innerHTML=g;
+    html="С какой буквы начинается слово?"; speech=`${cap(word)}. С какой буквы начинается?`; okSay=`${cap(word)} — буква ${nm}!`; errSay=`${cap(word)} начинается на ${nm}.`;
+  }
+  present({ty:"letters", label:`${L.name}: ${t?t.w+" → ":""}${ch}`, html:`<span>${html}</span>`, speech, right:ch, cls:"letter", fmt:x=>esc(wc(x)), opts:cur.opts, okSay, errSay, hide:false, noRead:true});
+  cur.onRight=()=>{ if(!cur.mistake) S.lettersOk=(S.lettersOk||0)+1; };
+}
 function readTask(repeat){
   const L=TRACKS.read.levels[S.lvl.read-1], st=S.st.read;
   if(!repeat || !cur || cur.kind!=="read"){ const pool=STORIES.filter(s=>s.lvl===L.n); let s, g=0; do{ s=rnd(pool); g++; }while(g<10 && cur && cur.story===s); cur={kind:"read", story:s}; }
@@ -2444,6 +2542,7 @@ function renderResetRow(){
     TRACK_KEYS.forEach(k=>{ S.lvl[k]=1; S.st[k]=1; S.resetAt[k]=Date.now(); run.streak[k]=0; run.errs[k]=0; }); S.medals=0; S.log=[]; });
 }
 function renderParent(){ renderResetRow();
+  seg($("caseSeg"), [{label:"ЗАГЛАВНЫЕ",v:true},{label:"строчные",v:false}], v=>(S.caseUp!==false)===v, v=>{ S.caseUp=v; });
   const tb=$("tracksBox"); tb.innerHTML=""; TRACK_KEYS.forEach(k=>renderTrack(k, tb));
   renderDayEd(); renderPhotos();
   if(!S.worlds) S.worlds={room:true,pirates:true,space:true,army:true};
@@ -2464,7 +2563,7 @@ function renderParent(){ renderResetRow();
   $("repShare").onclick=()=>{ try{ navigator.share({title:"Алан — отчёт", text:$("repText").value}); }catch(e){} };
   const last=a=>a.slice(-20), rows=[];
   ["na","v","pod","ryadom","iz"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty==="pred" && (" "+l.task+" ").includes(" "+PREPS[k].w+" "))); if(a.length) rows.push({n:`Предлог ${PREPS[k].w}`, a}); });
-  ["chto","gde","kto","delaet","sent","kakoy","form","say","day","read","odd","listen","mine","want","why","count"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty===k)); if(a.length) rows.push({n:TYPE_NAMES[k], a}); });
+  ["words","letters","chto","gde","kto","delaet","sent","kakoy","form","say","day","read","odd","listen","mine","want","why","count"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty===k)); if(a.length) rows.push({n:TYPE_NAMES[k], a}); });
   const tries=S.log.filter(l=>l.ty==="sayTry").slice(-50), ec=k=>tries.filter(l=>(l.err||[]).includes(k)).length;
   const errTiles = tries.length ? ["ending","prep","miss"].map(k=>`<div class="stat"><b>${ec(k)}</b><div>Голосом: ${({ending:"ошибки в окончаниях",prep:"не тот предлог",miss:"пропущенные слова"})[k]}</div></div>`).join("") : "";
   $("stats").innerHTML = rows.length||tries.length ? rows.map(r=>`<div class="stat"><b>${r.a.filter(x=>x.ok).length} из ${r.a.length}</b><div>${r.n}</div></div>`).join("")+errTiles : `<p class="hint-txt">Здесь появятся результаты по каждому типу заданий.</p>`;
