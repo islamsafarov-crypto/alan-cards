@@ -102,6 +102,7 @@ header{display:flex;align-items:center;gap:12px;min-height:52px}
 .ans.plain{border-color:#7E57C2;background:#F3EEFC}
 .m-gone{opacity:.35;transition:opacity .8s}
 .ans.word{border-color:#3949AB;background:#E8EAF6;font-size:clamp(28px,5vw,46px);letter-spacing:.04em;padding:12px 8px}
+.ans.mephone{white-space:nowrap;font-size:clamp(16px,2.6vw,28px);letter-spacing:.02em}
 .ans.letter{border-color:#EF6C00;background:#FFF3E0;font-size:clamp(40px,7vw,64px);padding:6px}
 .ans.wpic{border-color:#3949AB;background:#fff;padding:6px}
 .ans.wpic svg{width:clamp(80px,14vw,130px);height:clamp(80px,14vw,130px);display:block;margin:auto}
@@ -467,6 +468,26 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
       <p class="hint-txt">«Пока нет» — варианты ответа читаются вслух, а кнопка 🔊 на каждом ответе повторяет его. «Немного» — только кнопки 🔊. В обоих случаях «Читаем словами» и «Буквы» стоят на главном экране первыми.</p>
       <p class="hint-txt">Имя звучит в приветствии, в историях и в отчете для логопеда. Второе поле заполняется само — исправьте, если звучит неправильно.</p>
     </div>
+    <details class="pbox" id="meBox">
+      <summary>«Обо мне»: имя, мама и папа, адрес, телефон</summary>
+      <p class="hint-txt">Для игры «Обо мне»: ребенок учит, как его зовут, как зовут маму и папу, где он живет и телефон родителей — это важно, если он потеряется. Все хранится только на этом устройстве и никуда не отправляется.</p>
+      <div class="addph" style="flex-wrap:wrap">
+        <label>Фамилия ребенка<input type="text" id="meSur" maxlength="30"></label>
+        <label>Сколько лет<input type="text" id="meAge" maxlength="2" inputmode="numeric"></label>
+        <label>Как зовут маму<input type="text" id="meMom" maxlength="30" placeholder="Айгуль"></label>
+        <label>Как зовут папу<input type="text" id="meDad" maxlength="30" placeholder="Ислам"></label>
+        <label>Город<input type="text" id="meCity" maxlength="30" placeholder="Шымкент"></label>
+        <label>Улица<input type="text" id="meStreet" maxlength="40" placeholder="Абая"></label>
+        <label>Дом<input type="text" id="meHouse" maxlength="10" placeholder="27"></label>
+        <label>Телефон<input type="text" id="mePhone" maxlength="20" inputmode="tel" placeholder="8 701 123 45 67"></label>
+      </div>
+      <div class="row"><span>Чей телефон:</span><span class="seg" id="mePhSeg"></span></div>
+      <div class="row"><span>Вопросы «Обо мне» в других играх:</span><span class="seg" id="meFreqSeg"></span></div>
+      <div class="row"><button class="primary" id="meSave">Сохранить</button><span class="msg" id="meMsg"></span></div>
+      <h4 style="margin:14px 0 4px">Ваш голос</h4>
+      <p class="hint-txt">Запишите фразы своим голосом — ребенок лучше запоминает родной голос. Пока записи нет, фразу читает голос iPhone. Нажмите «Записать», скажите фразу, нажмите «Стоп».</p>
+      <div id="meRecs"></div>
+    </details>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
     <details class="pbox">
       <summary>Распорядок дня для модуля «Мой день»</summary>
@@ -947,6 +968,9 @@ const TRACKS = {
   words:{title:"Читаем словами", c:"#3949AB", b:"#E8EAF6", sub:"Глобальное чтение: узнаем слово целиком, по картинке.", chips:[["МЯЧ","#3949AB"]],
     stages:"1 — два варианта; 2 — три; 3 — четыре. Новые слова добавляются постепенно, по мере правильных ответов (по 5 слов).",
     levels:[{name:"Найди такое же слово", kind:"same"},{name:"Картинка → слово", kind:"pic2w"},{name:"Слово → картинка", kind:"w2pic"}]},
+  me:{title:"Обо мне", c:"#00897B", b:"#E0F2F1", sub:"Как меня зовут, мама и папа, где я живу, телефон.", chips:[["Я","#00897B"]],
+    stages:"1 — два варианта; 2 — три; 3 — четыре, и варианты похожи. Данные заполняет родитель: настройки → «Обо мне».",
+    levels:[{name:"Как тебя зовут? Кто мама и папа?", kind:"who"},{name:"Где ты живешь?", kind:"where"},{name:"Телефон мамы или папы", kind:"phone"},{name:"Ответь голосом", kind:"voice"}]},
   letters:{title:"Буквы", c:"#EF6C00", b:"#FFF3E0", sub:"Найди букву; с какой буквы начинается слово.", chips:[["А","#EF6C00"],["Б","#EF6C00"]],
     stages:"1 — два варианта; 2 — три; 3 — четыре. На уровне 3: на этапе 1 первая буква в слове выделена цветом, на этапе 3 слово не написано — только картинка. Новые буквы добавляются постепенно.",
     levels:[{name:"Найди такую же букву", kind:"same"},{name:"Услышь и найди букву", kind:"hear"},{name:"С какой буквы начинается слово?", kind:"first"}]},
@@ -960,11 +984,11 @@ const TRACKS = {
 };
 const TRACK_KEYS = Object.keys(TRACKS);
 const mainType = (tr, L) => tr==="q" ? TRACKS.q.levels[L-1].main : tr;
-const TYPE_NAMES = {words:"Читаем словами", letters:"Буквы", pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", odd:"Что лишнее?", neuro:"Руки и ритм", listen:"Слушай и делай", mine:"Я, ты, он, она", want:"Я хочу…", why:"Почему? Зачем?", count:"Один, два, много", math:"Считаем", storyQ:"История: вопрос", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", storyQ:"История: вопрос", storyOrd:"История: порядок", day:"Мой день", read:"Читаем"};
+const TYPE_NAMES = {me:"Обо мне", words:"Читаем словами", letters:"Буквы", pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", odd:"Что лишнее?", neuro:"Руки и ритм", listen:"Слушай и делай", mine:"Я, ты, он, она", want:"Я хочу…", why:"Почему? Зачем?", count:"Один, два, много", math:"Считаем", storyQ:"История: вопрос", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", storyQ:"История: вопрос", storyOrd:"История: порядок", day:"Мой день", read:"Читаем"};
 const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
 
 /* ================= state ================= */
-const DEF = {reader:"yes", caseUp:true, wordsOk:0, lettersOk:0, lvl:{}, st:{}, resetAt:{}, worlds:{room:true,pirates:true,space:true,army:false}, autoLevel:true, anim:"many", sfx:true, sound:true, rate:0.85, medals:0, bars:0, need:0, full:false, rewardFreq:"rare", finds:{}, surprise:"some", weak:{}, log:[], day:DAY_ITEMS.map(d=>({id:d.id,on:true}))};
+const DEF = {me:{}, meFreq:12, reader:"yes", caseUp:true, wordsOk:0, lettersOk:0, lvl:{}, st:{}, resetAt:{}, worlds:{room:true,pirates:true,space:true,army:false}, autoLevel:true, anim:"many", sfx:true, sound:true, rate:0.85, medals:0, bars:0, need:0, full:false, rewardFreq:"rare", finds:{}, surprise:"some", weak:{}, log:[], day:DAY_ITEMS.map(d=>({id:d.id,on:true}))};
 TRACK_KEYS.forEach(k=>{ DEF.lvl[k]=1; DEF.st[k]=1; DEF.resetAt[k]=0; });
 let S = JSON.parse(JSON.stringify(DEF));
 try{ const raw = localStorage.getItem("alan-cards-v2"); if(raw){ const d=JSON.parse(raw);
@@ -1026,7 +1050,7 @@ const ONLINE={}; let ttsDb=null;
 function ttsStore(){ if(ttsDb) return ttsDb; ttsDb=new Promise(res=>{ try{ const r=indexedDB.open("alan-tts",1); r.onupgradeneeded=()=>r.result.createObjectStore("clips"); r.onsuccess=()=>res(r.result); r.onerror=()=>res(null); }catch(e){ res(null); } }); return ttsDb; }
 function idbGet(k){ return ttsStore().then(db=>db?new Promise(res=>{ try{ const q=db.transaction("clips").objectStore("clips").get(k); q.onsuccess=()=>res(q.result||null); q.onerror=()=>res(null); }catch(e){ res(null); } }):null); }
 function idbPut(k,v){ ttsStore().then(db=>{ try{ db&&db.transaction("clips","readwrite").objectStore("clips").put(v,k); }catch(e){} }); }
-function onlineClip(text){ const k=clipKey(text); if(ONLINE[k]) return ONLINE[k];
+function onlineClip(text){ if(mePrivate(text)) return Promise.resolve(null); const k=clipKey(text); if(ONLINE[k]) return ONLINE[k];
   const p=ONLINE[k]=idbGet(k).then(b=>{ if(b) return b; if(navigator.onLine===false || !/^[а-яёa-z0-9\u0301 ,.!?:;\-—…«»"'()]+$/i.test(text) || text.length>200) return null;
       return fetch(TTS_URL+"?t="+encodeURIComponent(text)+"&k="+TTS_TOKEN).then(r=>r.ok?r.blob():null).then(b=>{ if(b&&b.size>500){ idbPut(k,b); return b; } return null; }); })
     .catch(()=>null).then(b=>{ if(!b) delete ONLINE[k]; return b; });
@@ -1040,7 +1064,11 @@ const SS = !SS0 ? null : (()=>{ let au=null;
   return { get speaking(){ return !!au || SS0.speaking; }, getVoices:()=>SS0.getVoices(),
     get onvoiceschanged(){ return SS0.onvoiceschanged; }, set onvoiceschanged(f){ SS0.onvoiceschanged=f; },
     cancel(){ stopClip(); SS0.cancel(); },
-    speak(u){ stopClip(); const k=useVera() && clipKey(u.text);
+    speak(u){ stopClip();
+      /* «Обо мне»: голос родителя, если он записал эту фразу; личные данные никогда не уходят на сервер — читает голос iPhone */
+      const rec=meRecFor(u.text); if(rec){ playBlob(rec,u,()=>SS0.speak(u)); return; }
+      if(mePrivate(u.text)){ SS0.speak(u); return; }
+      const k=useVera() && clipKey(u.text);
       if(k && CLIPS.has(k)){ const a=new Audio("tts/"+k+".mp3"); au=a; try{ a.playbackRate=(S.rate||0.85)/0.85; }catch(e){}
         const back=()=>{ if(au===a){ au=null; SS0.speak(u); } };
         a.onended=()=>{ if(au===a) au=null; u.onend&&u.onend(); }; a.onerror=back;
@@ -1291,6 +1319,7 @@ function chipArt(chips){ let x=10; return chips.map(([t,c])=>{ const w=18+t.leng
 /* big pictures for the home tiles (viewBox 0 0 200 140) */
 const G=(x,y,sc,inner)=>`<g transform="translate(${x},${y}) scale(${sc})">${inner}</g>`;
 const TILE_ART = {
+  me:()=>`<g transform="translate(100,74)">${ME_ICON.kid(0,0,1.15)}</g>`,
   letters:()=>[["А",62,84,-8],["Б",138,74,6],["М",100,124,-3]].map(([t,x,y,r])=>`<g transform="rotate(${r} ${x} ${y-24})"><rect x="${x-30}" y="${y-58}" width="60" height="64" rx="12" fill="#fff"/><text x="${x}" y="${y-6}" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="46" fill="#E65100">${S.caseUp===false?t.toLowerCase():t}</text></g>`).join(""),
   words:()=>G(58,70,1,ipic("ball",92))+`<rect x="104" y="44" width="86" height="52" rx="12" fill="#fff"/><text x="147" y="82" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="30" fill="#283593">${S.caseUp===false?"мяч":"МЯЧ"}</text>`,
   math: ()=>G(52,62,.42,OBJ("apple").svg)+G(150,62,.42,OBJ("apple").svg)+G(176,62,.42,OBJ("apple").svg)+`<text x="100" y="80" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="44" fill="#fff">+</text><text x="100" y="140" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="42" fill="#fff">1+2=3</text>`,
@@ -1310,7 +1339,7 @@ const TILE_ART = {
   count:()=>[[40,60],[90,60],[140,60],[65,108],[115,108]].map(([x,y])=>G(x,y,.48,OBJ("apple").svg)).join("")+`<text x="176" y="128" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#fff">5</text>`,
   read: ()=>`<path d="M100,40 Q70,24 24,30 V118 Q70,112 100,126Z" fill="#fff"/><path d="M100,40 Q130,24 176,30 V118 Q130,112 100,126Z" fill="#F5F5F5"/><path d="M100,40 V126" stroke="#D7CCC8" stroke-width="3"/><text x="62" y="92" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#E53935">А</text><text x="138" y="92" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#1E88E5">Б</text>`
 };
-const TILE_COL = {letters:["#FB8C00","#FFD8A8","#B85600"], words:["#5C6BC0","#C5CAE9","#283593"], neuro:["#FF8A3D","#FFD3AE","#C24A00"], pred:["#3A8DFF","#9CC8FF","#1452C4"], q:["#2EBF5E","#A7EDB9","#14853B"], sent:["#FF9A1F","#FFD49B","#C26200"], form:["#F2407D","#FFB3CE","#B3124D"],
+const TILE_COL = {me:["#26A69A","#B2DFDB","#00695C"], letters:["#FB8C00","#FFD8A8","#B85600"], words:["#5C6BC0","#C5CAE9","#283593"], neuro:["#FF8A3D","#FFD3AE","#C24A00"], pred:["#3A8DFF","#9CC8FF","#1452C4"], q:["#2EBF5E","#A7EDB9","#14853B"], sent:["#FF9A1F","#FFD49B","#C26200"], form:["#F2407D","#FFB3CE","#B3124D"],
   say:["#9467E0","#D3BCFA","#5E35B1"], day:["#14A898","#9EE6DC","#00695C"], kakoy:["#E84545","#FFB0A8","#A61D1D"], odd:["#14B3C4","#A6EEF5","#00838F"], listen:["#1E9BE0","#A9DDFA","#0263A0"], mine:["#D63A7A","#FFB1CF","#8E1047"], want:["#F0507F","#FFC0D3","#B0124A"], why:["#9C7A5A","#E3CDB8","#5B3F2A"], count:["#7E57C2","#D7C6F7","#4527A0"], math:["#14A88E","#A6EBDD","#00695C"], read:["#A0775E","#E2C6B2","#5D4037"]};
 function renderHome(){ refreshMascot();
   const h=$("home");
@@ -1469,8 +1498,10 @@ $("tanksClose").onclick=()=>{ $("tanks").hidden=true; };
 $("findsClose").onclick=()=>{ $("finds").hidden=true; renderHome(); };
 
 /* ================= common question flow ================= */
-function nextTask(repeat){ TASK_PICKS=[]; busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("off","m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } const fn=({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask, odd:oddTask, neuro:neuroTask, listen:listenTask, mine:mineTask, want:wantTask, why:whyTask, count:countTask, math:mathTask, words:wordsTask, letters:lettersTask})[mode];
-  if(repeat){ fn(repeat); return; }
+function nextTask(repeat){ TASK_PICKS=[]; busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("off","m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } const fn=({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask, odd:oddTask, neuro:neuroTask, listen:listenTask, mine:mineTask, want:wantTask, why:whyTask, count:countTask, math:mathTask, words:wordsTask, letters:lettersTask, me:meTask})[mode];
+  if(repeat){ (cur && cur.kind==="me" && mode!=="me" ? meTask : fn)(repeat); return; }
+  /* время от времени в любой игре — короткий вопрос «Обо мне» (если родитель заполнил анкету) */
+  if(mode!=="me" && mode!=="neuro" && meReady() && S.meFreq>0 && ++meTick>=S.meFreq){ meTick=0; meTask(false, true); return; }
   /* тот же вопрос не повторяется среди последних четырех: если выпал повтор — тихо собираем другой */
   const hk=mode+":"+S.lvl[mode], hist=TASK_HIST[hk]||(TASK_HIST[hk]=[]); let key="", held=[];
   sayHold=held;
@@ -1510,12 +1541,12 @@ function renderAnswers(opts, cls, fmt){
       if(busy) return; busy=true;
       if(text===cur.right){
         b.classList.add("right"); cur.render("ok"); if(cur.onRight) cur.onRight(); say(cur.okSay); onRightFx(b);
-        noteWeak(cur.wkey, true); logIt(tr, cur.ty, label, text, true); win(tr); whenQuiet(afterWin,900);
+        noteWeak(cur.wkey, true); logIt(cur.kind==="me"?"me":tr, cur.ty, label, text, true); if(cur.noScore){ whenQuiet(()=>nextTask(),900); } else { win(tr); whenQuiet(afterWin,900); }
       } else {
         b.classList.add("wrong"); cur.render("err"); onWrongFx();
         [...box.children].forEach(x=>{ if(x.dataset.v===cur.right) x.classList.add("hint"); });
         say(cur.errSay||cur.okSay);
-        noteWeak(cur.wkey, false); logIt(tr, cur.ty, label, text, false); lose(tr); whenQuiet(()=>nextTask(true),1200);
+        noteWeak(cur.wkey, false); logIt(cur.kind==="me"?"me":tr, cur.ty, label, text, false); if(!cur.noScore) lose(tr); whenQuiet(()=>nextTask(true),1200);
       }
     };
     box.appendChild(b);
@@ -2887,6 +2918,146 @@ function kakoyTask(repeat){
 }
 
 /* ================= 7. reading ================= */
+/* ================= «Обо мне» ================= */
+let meTick=0;
+const ME = () => S.me || (S.me={});
+const meName = () => (S.kid && S.kid.name || "").trim();
+const meDigits = () => String(ME().phone||"").replace(/\D/g,"");
+function mePhoneFmt(d){ d=d||meDigits(); if(d.length===11) return `${d[0]} ${d.slice(1,4)} ${d.slice(4,7)} ${d.slice(7,9)} ${d.slice(9)}`; if(d.length===10) return `${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6,8)} ${d.slice(8)}`; return d.replace(/(\d{3})(?=\d)/g,"$1 "); }
+const meReady = () => !!ME().saved;
+/* все личные значения — чтобы фразы с ними не уходили на сервер озвучки */
+function mePrivate(t){ const m=S.me||{}; const low=String(t).toLowerCase();
+  if(meSlots().some(([,t])=>voiceText(t)===low)) return true;
+  const vals=[m.sur,m.mom,m.dad,m.street,m.city].map(x=>String(x||"").trim().toLowerCase()).filter(x=>x.length>1);
+  if(vals.some(v=>low.includes(v))) return true;
+  const d=meDigits(); if(d.length>=5 && low.replace(/\D/g,"").includes(d.slice(-5))) return true;
+  return false; }
+const yearsW = n => { const m=n%10, h=n%100; return (m===1&&h!==11)?"год":(m>=2&&m<=4&&(h<10||h>20))?"года":"лет"; };
+/* фразы, которые родитель может записать своим голосом */
+function meSlots(){ const m=ME(), nm=meName(), out=[];
+  if(nm) out.push(["name", `Тебя зовут ${nm}${m.sur?" "+m.sur:""}.`]);
+  if(+m.age) out.push(["age", `Тебе ${+m.age} ${yearsW(+m.age)}.`]);
+  if(m.mom) out.push(["mom", `Твою маму зовут ${m.mom}.`]);
+  if(m.dad) out.push(["dad", `Твоего папу зовут ${m.dad}.`]);
+  if(m.city) out.push(["city", `Ты живешь в городе ${m.city}.`]);
+  if(m.street) out.push(["addr", `Твой адрес: улица ${m.street}${m.house?", дом "+m.house:""}.`]);
+  if(meDigits().length>=5) out.push(["phone", `Телефон ${m.phWho==="dad"?"папы":"мамы"}: ${mePhoneFmt()}.`]);
+  return out; }
+const meSlotText = id => (meSlots().find(x=>x[0]===id)||[])[1] || "";
+/* записи голоса родителя: IndexedDB, ключ — id фразы; запись действует, пока текст фразы не изменился */
+const ME_REC={}; let meDb=null;
+function meStore(){ if(meDb) return meDb; meDb=new Promise(res=>{ try{ const r=indexedDB.open("alan-me",1); r.onupgradeneeded=()=>r.result.createObjectStore("rec"); r.onsuccess=()=>res(r.result); r.onerror=()=>res(null); }catch(e){ res(null); } }); return meDb; }
+function meRecLoad(){ return meStore().then(db=>{ if(!db) return; return new Promise(res=>{ try{ const q=db.transaction("rec").objectStore("rec").openCursor(); q.onsuccess=()=>{ const c=q.result; if(c){ ME_REC[c.key]=c.value; c.continue(); } else res(); }; q.onerror=()=>res(); }catch(e){ res(); } }); }); }
+function meRecPut(id, v){ ME_REC[id]=v; return meStore().then(db=>{ try{ db && (v ? db.transaction("rec","readwrite").objectStore("rec").put(v,id) : db.transaction("rec","readwrite").objectStore("rec").delete(id)); }catch(e){} }); }
+function meRecFor(text){ for(const [id,t] of meSlots()){ const r=ME_REC[id]; if(r && r.text===t && voiceText(t)===text) return r.blob; } return null; }
+meRecLoad();
+/* картинки */
+const ME_ICON = {
+  kid:(x,y,k)=>`<g transform="translate(${x},${y}) scale(${k})"><circle cy="-22" r="20" fill="#FFCC80"/><path d="M-20,-28 q20,-26 40,0 q-6,-12 -20,-12 q-14,0 -20,12z" fill="#6D4C41"/><circle cx="-7" cy="-22" r="2.6" fill="#333"/><circle cx="7" cy="-22" r="2.6" fill="#333"/><path d="M-7,-13 q7,6 14,0" stroke="#333" stroke-width="2.4" fill="none" stroke-linecap="round"/><rect x="-22" y="0" width="44" height="40" rx="14" fill="#26A69A"/></g>`,
+  house:(x,y,k)=>`<g transform="translate(${x},${y}) scale(${k})"><path d="M-70,0 L0,-62 L70,0Z" fill="#E53935"/><rect x="-55" y="-4" width="110" height="80" fill="#FFF3E0" stroke="#8D6E63" stroke-width="4"/><rect x="-14" y="26" width="28" height="50" fill="#8D6E63"/><rect x="-44" y="12" width="22" height="22" fill="#90CAF9" stroke="#8D6E63" stroke-width="3"/><rect x="22" y="12" width="22" height="22" fill="#90CAF9" stroke="#8D6E63" stroke-width="3"/></g>`,
+  phone:(x,y,k)=>`<g transform="translate(${x},${y}) scale(${k})"><rect x="-38" y="-70" width="76" height="140" rx="14" fill="#37474F"/><rect x="-30" y="-56" width="60" height="104" rx="4" fill="#B2DFDB"/><circle cy="58" r="6" fill="#90A4AE"/><path d="M-12,-14 q-4,22 18,34 l8,-8 l-10,-8 l-5,4 q-8,-6 -10,-14 l4,-5 l-8,-10z" fill="#00695C"/></g>`,
+  adult:(x,y,k,f)=>`<g transform="translate(${x},${y}) scale(${k})"><circle cy="-40" r="24" fill="#FFCC80"/>${f?'<path d="M-26,-40 q0,-34 26,-34 q26,0 26,34 l4,30 q-8,-20 -12,-30 q-14,-12 -18,-18 q-4,8 -22,18 q-4,10 -12,30z" fill="#4E342E"/>':'<path d="M-24,-46 q4,-26 24,-26 q22,0 24,26 q-8,-14 -24,-14 q-16,0 -24,14z" fill="#3E2723"/>'}<circle cx="-8" cy="-40" r="3" fill="#333"/><circle cx="8" cy="-40" r="3" fill="#333"/><path d="M-8,-30 q8,6 16,0" stroke="#333" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M-34,-8 q34,-14 68,0 l8,74 h-84z" fill="${f?"#EC407A":"#1E88E5"}"/></g>`
+};
+function meScene(id){ clearScene(); room(false); const ph=n=>PHOTOS.find(p=>(p.name||"").trim().toLowerCase()===n);
+  const pick = id==="mom" ? ph("мама") : id==="dad" ? ph("папа") : (id==="name"||id==="age") ? (ph(meName().toLowerCase())||ph("я")) : null;
+  if(pick){ showPhoto(pick.img); return; }
+  const svg = id==="mom" ? ME_ICON.adult(500,330,2.4,true) : id==="dad" ? ME_ICON.adult(500,330,2.4,false)
+    : (id==="city"||id==="addr") ? ME_ICON.house(500,300,2.3) : id==="phone" ? ME_ICON.phone(500,300,1.9) : ME_ICON.kid(500,330,3.2);
+  $("sBack").innerHTML=svg; }
+/* вопросы и варианты */
+const ME_BOYS=["Тимур","Миша","Арман","Данияр","Саша","Артём","Ерасыл","Максим"], ME_GIRLS=["Амина","Аня","Аружан","Маша","Дана","Соня","Камила","Алия"];
+const ME_MOMS=["Айгуль","Ольга","Динара","Анна","Сауле","Марина","Гульнара","Елена"], ME_DADS=["Ерлан","Сергей","Асхат","Андрей","Бауыржан","Дмитрий","Нурлан","Олег"];
+const ME_CITIES=["Алматы","Астана","Шымкент","Караганда","Актобе","Тараз","Павлодар","Костанай"], ME_STREETS=["Абая","Толе би","Гагарина","Байтурсынова","Сейфуллина","Жибек Жолы","Пушкина","Момышулы"];
+function meFacts(kind){ const m=ME(), nm=meName(), g=kidG(), all=[];
+  if(nm) all.push({id:"name", q:"Как тебя зовут?", ans:nm, pool:g==="f"?ME_GIRLS:ME_BOYS, say:"Меня зовут"});
+  if(+m.age) all.push({id:"age", q:"Сколько тебе лет?", ans:String(+m.age), ages:true, say:"Мне"});
+  if(m.mom) all.push({id:"mom", q:"Как зовут твою маму?", ans:m.mom, pool:ME_MOMS, say:"Маму зовут"});
+  if(m.dad) all.push({id:"dad", q:"Как зовут твоего папу?", ans:m.dad, pool:ME_DADS, say:"Папу зовут"});
+  if(m.city) all.push({id:"city", q:"В каком городе ты живешь?", ans:m.city, pool:ME_CITIES, say:"Я живу в городе"});
+  if(m.street) all.push({id:"addr", q:"Какой у тебя адрес?", ans:`ул. ${m.street}${m.house?", д. "+m.house:""}`, addr:true});
+  if(meDigits().length>=5) all.push({id:"phone", q:`Какой телефон у ${m.phWho==="dad"?"папы":"мамы"}?`, ans:mePhoneFmt(), phone:true});
+  const want = kind==="who" ? ["name","age","mom","dad"] : kind==="where" ? ["city","addr"] : kind==="phone" ? ["phone"] : kind==="voice" ? ["name","age","mom","dad","city"] : ["name","age","mom","dad","city","addr","phone"];
+  const f=all.filter(x=>want.includes(x.id)); return f.length ? f : all.filter(x=>x.id==="name"); }
+function meWrong(f, n, st){ const m=ME(), out=new Set(), lowA=f.ans.toLowerCase();
+  if(f.pool) shuffle(f.pool.filter(x=>x.toLowerCase()!==lowA)).forEach(x=>out.add(x));
+  else if(f.ages){ const a=+f.ans; shuffle([a-3,a-2,a-1,a+1,a+2,a+3].filter(x=>x>0)).forEach(x=>out.add(String(x))); }
+  else if(f.addr){ const h=String(m.house||""), hn=parseInt(h)||5;
+    const sameSt=shuffle([hn+1,hn+2,hn+7,Math.max(1,hn-1),hn+12].filter(x=>String(x)!==h)).map(x=>`ул. ${m.street}, д. ${x}`);
+    const other=shuffle(ME_STREETS.filter(x=>x.toLowerCase()!==String(m.street).toLowerCase())).map(x=>`ул. ${x}${h?", д. "+h:""}`);
+    (st===3 ? [...sameSt, ...other] : [...other, ...sameSt]).forEach(x=>out.add(x)); }
+  else if(f.phone){ const d=meDigits(); let guard=0;
+    while(out.size<n && guard++<60){ const a=d.split(""); const k = st===1 ? Math.max(4,Math.floor(d.length/2)) : st===2 ? 2 : 1;
+      for(let i=0;i<k;i++){ const j=d.length-1-Math.floor(Math.random()*Math.min(7,d.length)); a[j]=String((+a[j]+1+Math.floor(Math.random()*8))%10); }
+      const v=a.join(""); if(v!==d) out.add(mePhoneFmt(v)); } }
+  out.delete(f.ans); return [...out].slice(0,n); }
+function meTask(repeat, interlude){
+  const lvKind = interlude ? "any" : TRACKS.me.levels[S.lvl.me-1].kind, st = interlude ? 1 : S.st.me;
+  if(!repeat || !cur || cur.kind!=="me"){ const facts=meFacts(lvKind==="voice"&&!interlude?"voice":lvKind);
+    cur={kind:"me", f:freshPick(facts, x=>"me:"+x.id), interlude:!!interlude}; }
+  else cur.mistake=true;
+  const f=cur.f; cur.wkey="me:"+f.id; cur.noScore=!!cur.interlude;
+  meScene(f.id);
+  const ok=meSlotText(f.id);
+  if(lvKind==="voice" && !cur.interlude) return meVoice(f, st, ok);
+  const chip=`<span class="chip" style="background:#00897B">ОБО МНЕ</span>`;
+  const opts=[f.ans, ...meWrong(f, nOpts(st,1,2,3), st)];
+  present({ty:"me", label:`${f.q} → ${f.ans}`, html:`${chip}<span>${esc(f.q)}</span>`, speech:f.q, right:f.ans, cls:f.ages?"digit":f.phone?"plain mephone":"plain", okSay:ok||f.ans, errSay:ok||f.ans, opts, hide:false, noRead:true});
+}
+function meVoice(f, st, okText){
+  busy=false; cur.ty="me"; cur.speech=f.q;
+  const right = f.say ? `${f.say} ${f.id==="age" ? f.ans+" "+yearsW(+f.ans) : f.ans}` : f.ans;
+  cur.render=state=>setCard(`<span class="chip" style="background:#00897B">ОТВЕТЬ</span><span>${esc(f.q)}</span>`, state); cur.render();
+  say(f.q);
+  const shown = st===1 ? right : (st===2 ? f.say ? f.say+" …" : "…" : "");
+  storyJudge(shown?esc(shown):"Ответ скрыт.", !shown, [["jSelf",gx("Сказал сам","Сказала сама"),"self"],["jHelp","С подсказкой","help"],["jNo",gx("Не сказал","Не сказала"),""]]);
+  const done=kind=>{ if(busy) return; busy=true; $("model").textContent=right; $("model").classList.remove("empty");
+    const good=kind==="self"; cur.render(good?"ok":(kind==="no"?"err":null)); say(okText||right);
+    if(good) onRightFx($("jMic"));
+    logIt("me","me",`${f.q} → ${right}`, cur.voice?`голосом: «${cur.voice}»`:({self:gx("сам","сама"),help:"с подсказкой",no:gx("не сказал","не сказала")})[kind], good);
+    if(good){ win("me"); whenQuiet(afterWin,1400); } else { if(kind==="no") lose("me"); else neutral("me"); whenQuiet(()=>nextTask(),1400); } };
+  holdBtn($("jSelf"),()=>done("self")); holdBtn($("jHelp"),()=>done("help")); holdBtn($("jNo"),()=>done("no"));
+  const mic=$("jMic"), heard=$("jHeard"), key=f.ans.toLowerCase().replace(/ё/g,"е");
+  mic.onclick=()=>{ if(busy) return; if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
+    mic.classList.add("listening"); heard.textContent="Слушаю…"; sfx("tap");
+    listen(alts=>{ mic.classList.remove("listening"); if(busy) return;
+      const hit=alts.find(a=>String(a).toLowerCase().replace(/ё/g,"е").includes(key));
+      if(hit){ cur.voice=hit; heard.textContent=`Услышал: «${hit}»`; done("self"); return; }
+      heard.textContent=`Услышал: «${alts[0]||""}». Скажи еще раз.`; mascot("oops","Еще раз!");
+    }, err=>{ mic.classList.remove("listening"); if(!busy) heard.textContent=micFail(err); });
+  };
+}
+/* ----- настройки «Обо мне» ----- */
+let meRecorder=null;
+function renderMeBox(){ const m=ME();
+  $("meSur").value=m.sur||""; $("meAge").value=m.age||""; $("meMom").value=m.mom||""; $("meDad").value=m.dad||"";
+  $("meCity").value=m.city||""; $("meStreet").value=m.street||""; $("meHouse").value=m.house||""; $("mePhone").value=m.phone||"";
+  seg($("mePhSeg"), [{label:"мамы",v:"mom"},{label:"папы",v:"dad"}], v=>(m.phWho||"mom")===v, v=>{ ME().phWho=v; });
+  seg($("meFreqSeg"), [{label:"нет",v:0},{label:"редко",v:12},{label:"часто",v:6}], v=>(S.meFreq??12)===v, v=>{ S.meFreq=v; });
+  renderMeRecs(); }
+function renderMeRecs(){ const box=$("meRecs"); box.innerHTML=""; const canRec=!!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  const slots=meSlots(); if(!slots.length){ box.innerHTML='<p class="hint-txt">Сначала заполните и сохраните данные выше.</p>'; return; }
+  slots.forEach(([id,text])=>{ const r=ME_REC[id], has=r && r.text===text, stale=r && r.text!==text;
+    const row=document.createElement("div"); row.className="row"; row.style.cssText="align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0";
+    row.innerHTML=`<span style="flex:1 1 220px">${esc(text)} <small style="color:${has?"#2E7D32":"#888"}">${has?"— ваш голос":stale?"— данные изменились, запишите заново":"— голос iPhone"}</small></span>`;
+    const b=(t,fn)=>{ const x=document.createElement("button"); x.textContent=t; x.onclick=fn; row.appendChild(x); return x; };
+    b("▶ Послушать", ()=>{ sfx("tap"); say(text); });
+    if(canRec){ const rb=b("● Записать", ()=>{
+        if(meRecorder){ try{ meRecorder.stop(); }catch(e){} return; }
+        navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{ const chunks=[]; let mr;
+          try{ mr=new MediaRecorder(stream); }catch(e){ stream.getTracks().forEach(t=>t.stop()); $("meMsg").textContent="Запись голоса недоступна на этом устройстве."; return; }
+          meRecorder=mr; rb.textContent="■ Стоп"; rb.classList.add("primary");
+          mr.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
+          mr.onstop=()=>{ stream.getTracks().forEach(t=>t.stop()); meRecorder=null; const blob=new Blob(chunks,{type:mr.mimeType||"audio/mp4"});
+            if(blob.size>2000) meRecPut(id,{text,blob}).then(()=>{ renderMeRecs(); try{ new Audio(URL.createObjectURL(blob)).play(); }catch(e){} }); else renderMeRecs(); };
+          mr.start(); setTimeout(()=>{ if(meRecorder===mr) try{ mr.stop(); }catch(e){} }, 12000);
+        }).catch(()=>{ $("meMsg").textContent="Нет доступа к микрофону. Разрешите его в настройках iPhone."; }); }); }
+    if(r) b("✕", ()=>{ meRecPut(id,null).then(renderMeRecs); });
+    box.appendChild(row); });
+  if(!canRec) box.insertAdjacentHTML("beforeend",'<p class="hint-txt">Запись голоса на этом устройстве недоступна — звучит голос iPhone.</p>'); }
+function bindMeBox(){ $("meSave").onclick=()=>{ const m=ME(), v=id=>$(id).value.trim();
+  m.sur=v("meSur"); m.age=v("meAge")?Math.max(0,Math.min(30,parseInt(v("meAge"))||0))||"":""; m.mom=cap(v("meMom")); m.dad=cap(v("meDad"));
+  m.city=cap(v("meCity")); m.street=v("meStreet"); m.house=v("meHouse"); m.phone=v("mePhone"); m.saved=true; save(); renderMeBox();
+  $("meMsg").textContent="Сохранено"; }; }
 /* ================= «Читаем словами» (глобальное чтение) ================= */
 const WORD_SETS = [
   [["МЯЧ","ball"],["КОТ","cat"],["ТАНК","tank"],["МИШКА","bear"],["БАНАН","banana"]],
@@ -3127,11 +3298,12 @@ $("kidStart").onclick=()=>{ if(!setKid($("kidNameS").value, kidGPick)){ $("kidMs
 function renderKidBox(){ $("kidNameP").value=(S.kid&&S.kid.name)||""; $("kidDatP").value=kidDat(); $("kidMsg").textContent="";
   seg($("kidGSeg"), kidGList(), v=>kidG()===v, v=>{ setKid(kidName(), v); });
   $("kidNameP").oninput=()=>{ $("kidDatP").value=autoDat($("kidNameP").value.trim(), kidG()); };
+  bindMeBox();
   $("kidSaveP").onclick=()=>{ if(setKid($("kidNameP").value, kidG(), $("kidDatP").value)){ renderKidBox(); $("kidMsg").textContent="Сохранено"; } else $("kidMsg").textContent="Напишите имя"; }; }
 function renderRewSeg(){ seg($("rewSeg"), [{label:"Часто", v:"often"},{label:"Реже", v:"rare"}], v=>(S.rewardFreq||"rare")===v, v=>{ S.rewardFreq=v; S.need=0; if(S.bars) S.bars=Math.min(S.bars, 1); });
   $("rewHint").textContent = S.full ? "«Часто» — новый друг за каждые 5 правильных ответов. «Реже» — за 10–15, а между ними силуэт следующего друга проявляется по частям, чтобы коллекция не заканчивалась слишком быстро."
                                     : "В бесплатной версии новый друг выдается за каждые 5 правильных ответов. Настройка «Реже» работает в полной версии."; }
-function renderParent(){ renderBuy(); renderResetRow(); renderKidBox(); renderRewSeg();
+function renderParent(){ renderBuy(); renderResetRow(); renderKidBox(); renderRewSeg(); renderMeBox();
   seg($("readSeg"), READ_LIST, v=>(S.reader||"yes")===v, v=>{ S.reader=v; });
   seg($("caseSeg"), [{label:"ЗАГЛАВНЫЕ",v:true},{label:"строчные",v:false}], v=>(S.caseUp!==false)===v, v=>{ S.caseUp=v; });
   const tb=$("tracksBox"); tb.innerHTML=""; TRACK_KEYS.forEach(k=>renderTrack(k, tb));
@@ -3151,7 +3323,7 @@ function renderParent(){ renderBuy(); renderResetRow(); renderKidBox(); renderRe
   $("repShare").onclick=()=>{ try{ navigator.share({title:kidName()+" — отчёт", text:$("repText").value}); }catch(e){} };
   const last=a=>a.slice(-20), rows=[];
   ["na","v","pod","ryadom","iz"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty==="pred" && (" "+l.task+" ").includes(" "+PREPS[k].w+" "))); if(a.length) rows.push({n:`Предлог ${PREPS[k].w}`, a}); });
-  ["words","letters","chto","gde","kto","delaet","sent","kakoy","form","say","day","read","odd","listen","mine","want","why","count"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty===k)); if(a.length) rows.push({n:TYPE_NAMES[k], a}); });
+  ["me","words","letters","chto","gde","kto","delaet","sent","kakoy","form","say","day","read","odd","listen","mine","want","why","count"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty===k)); if(a.length) rows.push({n:TYPE_NAMES[k], a}); });
   const tries=S.log.filter(l=>l.ty==="sayTry").slice(-50), ec=k=>tries.filter(l=>(l.err||[]).includes(k)).length;
   const errTiles = tries.length ? ["ending","prep","miss"].map(k=>`<div class="stat"><b>${ec(k)}</b><div>Голосом: ${({ending:"ошибки в окончаниях",prep:"не тот предлог",miss:"пропущенные слова"})[k]}</div></div>`).join("") : "";
   $("stats").innerHTML = rows.length||tries.length ? rows.map(r=>`<div class="stat"><b>${r.a.filter(x=>x.ok).length} из ${r.a.length}</b><div>${r.n}</div></div>`).join("")+errTiles : `<p class="hint-txt">Здесь появятся результаты по каждому типу заданий.</p>`;
