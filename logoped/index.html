@@ -465,6 +465,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
       <div class="row"><span class="seg" id="kidGSeg"></span><button class="primary" id="kidSaveP">Сохранить</button><span class="msg" id="kidMsg"></span></div>
       <div class="row"><span>Чтение:</span><span class="seg" id="readSeg"></span></div>
       <div class="row"><span>Буквы в «Читаем словами»:</span><span class="seg" id="caseSeg"></span></div>
+      <div class="row"><span>4-я ступень — ответ голосом без вариантов:</span><span class="seg" id="v4Seg"></span></div>
       <p class="hint-txt">«Пока нет» — варианты ответа читаются вслух, а кнопка 🔊 на каждом ответе повторяет его. «Немного» — только кнопки 🔊. В обоих случаях «Читаем словами» и «Буквы» стоят на главном экране первыми.</p>
       <p class="hint-txt">Имя звучит в приветствии, в историях и в отчете для логопеда. Второе поле заполняется само — исправьте, если звучит неправильно.</p>
     </div>
@@ -968,6 +969,12 @@ const TRACKS = {
   words:{title:"Читаем словами", c:"#3949AB", b:"#E8EAF6", sub:"Глобальное чтение: узнаем слово целиком, по картинке.", chips:[["МЯЧ","#3949AB"]],
     stages:"1 — два варианта; 2 — три; 3 — четыре. Новые слова добавляются постепенно, по мере правильных ответов (по 5 слов).",
     levels:[{name:"Найди такое же слово", kind:"same"},{name:"Картинка → слово", kind:"pic2w"},{name:"Слово → картинка", kind:"w2pic"}]},
+  mood:{title:"Настроение", c:"#F4511E", b:"#FBE9E7", sub:"Радостный, грустный, злой… Почему он так себя чувствует?", chips:[["😊","#F4511E"]],
+    stages:"1 — два варианта; 2 — три; 3 — четыре.",
+    levels:[{name:"Какое у него настроение?", kind:"name"},{name:"Найди: где грустный?", kind:"find"},{name:"Что случилось — какой он?", kind:"sit"},{name:"Почему он грустный? (голосом)", kind:"why"}]},
+  go:{title:"Поехали!", c:"#3949AB", b:"#E8EAF6", sub:"Направо и налево, быстро и медленно, кто быстрее.", chips:[["→","#3949AB"]],
+    stages:"1 — два варианта; 2 — три; 3 — четыре (где можно).",
+    levels:[{name:"Куда едет: направо или налево?", kind:"dir"},{name:"Быстро или медленно?", kind:"speed"},{name:"Кто едет быстрее?", kind:"race"},{name:"Вперед или назад?", kind:"back"}]},
   me:{title:"Обо мне", c:"#00897B", b:"#E0F2F1", sub:"Как меня зовут, мама и папа, где я живу, телефон.", chips:[["Я","#00897B"]],
     stages:"1 — два варианта; 2 — три; 3 — четыре, и варианты похожи. Данные заполняет родитель: настройки → «Обо мне».",
     levels:[{name:"Как тебя зовут? Кто мама и папа?", kind:"who"},{name:"Где ты живешь?", kind:"where"},{name:"Телефон мамы или папы", kind:"phone"},{name:"Ответь голосом", kind:"voice"}]},
@@ -984,11 +991,11 @@ const TRACKS = {
 };
 const TRACK_KEYS = Object.keys(TRACKS);
 const mainType = (tr, L) => tr==="q" ? TRACKS.q.levels[L-1].main : tr;
-const TYPE_NAMES = {me:"Обо мне", words:"Читаем словами", letters:"Буквы", pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", odd:"Что лишнее?", neuro:"Руки и ритм", listen:"Слушай и делай", mine:"Я, ты, он, она", want:"Я хочу…", why:"Почему? Зачем?", count:"Один, два, много", math:"Считаем", storyQ:"История: вопрос", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", storyQ:"История: вопрос", storyOrd:"История: порядок", day:"Мой день", read:"Читаем"};
+const TYPE_NAMES = {mood:"Настроение", go:"Поехали!", me:"Обо мне", words:"Читаем словами", letters:"Буквы", pred:"Предлоги", chto:"Что это?", gde:"Где?", kto:"Кто это?", delaet:"Что делает?", sent:"Предложения", kakoy:"Какой?", odd:"Что лишнее?", neuro:"Руки и ритм", listen:"Слушай и делай", mine:"Я, ты, он, она", want:"Я хочу…", why:"Почему? Зачем?", count:"Один, два, много", math:"Считаем", storyQ:"История: вопрос", form:"Формы слов", say:"Скажи сам", sayTry:"Скажи сам: попытка", storyQ:"История: вопрос", storyOrd:"История: порядок", day:"Мой день", read:"Читаем"};
 const VERBS = ["ест","спит","играет","читает","рисует","пьет","сидит","бежит","гуляет","смеется"];
 
 /* ================= state ================= */
-const DEF = {me:{}, meFreq:12, reader:"yes", caseUp:true, wordsOk:0, lettersOk:0, lvl:{}, st:{}, resetAt:{}, worlds:{room:true,pirates:true,space:true,army:false}, autoLevel:true, anim:"many", sfx:true, sound:true, rate:0.85, medals:0, bars:0, need:0, full:false, rewardFreq:"rare", finds:{}, surprise:"some", weak:{}, log:[], day:DAY_ITEMS.map(d=>({id:d.id,on:true}))};
+const DEF = {vs:{}, v4:true, me:{}, meFreq:12, reader:"yes", caseUp:true, wordsOk:0, lettersOk:0, lvl:{}, st:{}, resetAt:{}, worlds:{room:true,pirates:true,space:true,army:false}, autoLevel:true, anim:"many", sfx:true, sound:true, rate:0.85, medals:0, bars:0, need:0, full:false, rewardFreq:"rare", finds:{}, surprise:"some", weak:{}, log:[], day:DAY_ITEMS.map(d=>({id:d.id,on:true}))};
 TRACK_KEYS.forEach(k=>{ DEF.lvl[k]=1; DEF.st[k]=1; DEF.resetAt[k]=0; });
 let S = JSON.parse(JSON.stringify(DEF));
 try{ const raw = localStorage.getItem("alan-cards-v2"); if(raw){ const d=JSON.parse(raw);
@@ -1319,6 +1326,8 @@ function chipArt(chips){ let x=10; return chips.map(([t,c])=>{ const w=18+t.leng
 /* big pictures for the home tiles (viewBox 0 0 200 140) */
 const G=(x,y,sc,inner)=>`<g transform="translate(${x},${y}) scale(${sc})">${inner}</g>`;
 const TILE_ART = {
+  mood:()=>moodFace("happy",62,78,0.55)+moodFace("sad",140,78,0.55),
+  go:()=>`<rect x="10" y="96" width="180" height="26" rx="6" fill="#546E7A"/><path d="M24,109 h160" stroke="#fff" stroke-width="3" stroke-dasharray="14 10"/><g transform="translate(100,72)">${ipic("car_red",96)}</g><path d="M160,40 l18,0 m-8,-8 l8,8 l-8,8" stroke="#1A237E" stroke-width="5" fill="none" stroke-linecap="round"/>`,
   me:()=>`<g transform="translate(100,74)">${ME_ICON.kid(0,0,1.15)}</g>`,
   letters:()=>[["А",62,84,-8],["Б",138,74,6],["М",100,124,-3]].map(([t,x,y,r])=>`<g transform="rotate(${r} ${x} ${y-24})"><rect x="${x-30}" y="${y-58}" width="60" height="64" rx="12" fill="#fff"/><text x="${x}" y="${y-6}" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="46" fill="#E65100">${S.caseUp===false?t.toLowerCase():t}</text></g>`).join(""),
   words:()=>G(58,70,1,ipic("ball",92))+`<rect x="104" y="44" width="86" height="52" rx="12" fill="#fff"/><text x="147" y="82" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="30" fill="#283593">${S.caseUp===false?"мяч":"МЯЧ"}</text>`,
@@ -1339,7 +1348,7 @@ const TILE_ART = {
   count:()=>[[40,60],[90,60],[140,60],[65,108],[115,108]].map(([x,y])=>G(x,y,.48,OBJ("apple").svg)).join("")+`<text x="176" y="128" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#fff">5</text>`,
   read: ()=>`<path d="M100,40 Q70,24 24,30 V118 Q70,112 100,126Z" fill="#fff"/><path d="M100,40 Q130,24 176,30 V118 Q130,112 100,126Z" fill="#F5F5F5"/><path d="M100,40 V126" stroke="#D7CCC8" stroke-width="3"/><text x="62" y="92" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#E53935">А</text><text x="138" y="92" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="40" fill="#1E88E5">Б</text>`
 };
-const TILE_COL = {me:["#26A69A","#B2DFDB","#00695C"], letters:["#FB8C00","#FFD8A8","#B85600"], words:["#5C6BC0","#C5CAE9","#283593"], neuro:["#FF8A3D","#FFD3AE","#C24A00"], pred:["#3A8DFF","#9CC8FF","#1452C4"], q:["#2EBF5E","#A7EDB9","#14853B"], sent:["#FF9A1F","#FFD49B","#C26200"], form:["#F2407D","#FFB3CE","#B3124D"],
+const TILE_COL = {mood:["#FF7043","#FFCCBC","#BF360C"], go:["#5C6BC0","#C5CAE9","#1A237E"], me:["#26A69A","#B2DFDB","#00695C"], letters:["#FB8C00","#FFD8A8","#B85600"], words:["#5C6BC0","#C5CAE9","#283593"], neuro:["#FF8A3D","#FFD3AE","#C24A00"], pred:["#3A8DFF","#9CC8FF","#1452C4"], q:["#2EBF5E","#A7EDB9","#14853B"], sent:["#FF9A1F","#FFD49B","#C26200"], form:["#F2407D","#FFB3CE","#B3124D"],
   say:["#9467E0","#D3BCFA","#5E35B1"], day:["#14A898","#9EE6DC","#00695C"], kakoy:["#E84545","#FFB0A8","#A61D1D"], odd:["#14B3C4","#A6EEF5","#00838F"], listen:["#1E9BE0","#A9DDFA","#0263A0"], mine:["#D63A7A","#FFB1CF","#8E1047"], want:["#F0507F","#FFC0D3","#B0124A"], why:["#9C7A5A","#E3CDB8","#5B3F2A"], count:["#7E57C2","#D7C6F7","#4527A0"], math:["#14A88E","#A6EBDD","#00695C"], read:["#A0775E","#E2C6B2","#5D4037"]};
 function renderHome(){ refreshMascot();
   const h=$("home");
@@ -1361,7 +1370,7 @@ function renderProg(){
   const p=$("prog"); if(!mode){ p.hidden=true; return; }
   const L=S.lvl[mode], max=TRACKS[mode].levels.length, st=S.st[mode];
   const rr=readiness(mode); let frac = st<3 ? Math.min(1, run.streak[mode]/5) : Math.min(1, rr.ok/8)*Math.min(1, rr.n/10);
-  let pct = L>=max && st===3 ? 100 : ((st-1)+frac)/3*100;
+  let pct = L>=max && st===3 ? 100 : ((st-1)+frac)/3*100; if(vsOn(mode) && pct<100) pct=Math.max(pct, 85);
   p.hidden=false; $("progLbl").textContent = L>=max ? `Уровень ${L} (последний)` : `Уровень ${L} → ${L+1}`;
   const t=$("rtank"); const rk=useTanks()?"tank":"robot"; if(t.dataset.k!==rk){ t.dataset.k=rk; t.innerHTML = rk==="tank" ? tankSvg("#5E7F4A") : `<g transform="translate(0,-6) scale(.36)">${robotParts(CHIP,false)}</g>`; }
   const pos=6+pct*0.8; if(t.dataset.p!==String(pos)){ t.style.left=pos+"%"; if(lively() && t.dataset.p){ t.classList.remove("drive"); void t.offsetWidth; t.classList.add("drive"); } t.dataset.p=String(pos); }
@@ -1406,8 +1415,8 @@ function logIt(tr, ty, task, ans, ok){ S.log.push({t:Date.now(), tr, ty, lvl:S.l
 function showArea(which){ ["answers","build","judge"].forEach(id=>$(id).hidden = id!==which); }
 
 /* ================= progress ================= */
-function win(tr){ run.errs[tr]=0; run.streak[tr]++; if(run.streak[tr]>=5 && S.st[tr]<3){ S.st[tr]++; run.streak[tr]=0; save(); } run.stars=Math.min(5,run.stars+1); renderStars(); }
-function lose(tr){ TASK_PICKS.forEach(([pid,k])=>{ const d=DECKS[pid]||(DECKS[pid]=[]); const j=d.indexOf(k); if(j>=0) d.splice(j,1); d.splice(Math.min(3,d.length),0,k); }); run.streak[tr]=0; run.errs[tr]++; if(run.errs[tr]>=2 && S.st[tr]>1){ S.st[tr]--; run.errs[tr]=0; save(); } renderProg(); }
+function win(tr){ run.errs[tr]=0; run.streak[tr]++; if(run.streak[tr]>=5 && S.st[tr]<3){ S.st[tr]++; run.streak[tr]=0; save(); } else if(run.streak[tr]>=5 && S.st[tr]===3 && canV4(tr) && !vsOn(tr)){ (S.vs||(S.vs={}))[tr]=true; run.streak[tr]=0; save(); } run.stars=Math.min(5,run.stars+1); renderStars(); }
+function lose(tr){ TASK_PICKS.forEach(([pid,k])=>{ const d=DECKS[pid]||(DECKS[pid]=[]); const j=d.indexOf(k); if(j>=0) d.splice(j,1); d.splice(Math.min(3,d.length),0,k); }); run.streak[tr]=0; run.errs[tr]++; if(run.errs[tr]>=2 && vsOn(tr)){ S.vs[tr]=false; run.errs[tr]=0; save(); } else if(run.errs[tr]>=2 && S.st[tr]>1){ S.st[tr]--; run.errs[tr]=0; save(); } renderProg(); }
 function neutral(tr){ run.streak[tr]=0; }
 function levelUpDue(){ return mode && S.autoLevel && S.full && readiness(mode).ready; }
 function showLevelUp(){
@@ -1498,7 +1507,7 @@ $("tanksClose").onclick=()=>{ $("tanks").hidden=true; };
 $("findsClose").onclick=()=>{ $("finds").hidden=true; renderHome(); };
 
 /* ================= common question flow ================= */
-function nextTask(repeat){ TASK_PICKS=[]; busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("off","m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } const fn=({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask, odd:oddTask, neuro:neuroTask, listen:listenTask, mine:mineTask, want:wantTask, why:whyTask, count:countTask, math:mathTask, words:wordsTask, letters:lettersTask, me:meTask})[mode];
+function nextTask(repeat){ TASK_PICKS=[]; busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("off","m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } const fn=({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask, odd:oddTask, neuro:neuroTask, listen:listenTask, mine:mineTask, want:wantTask, why:whyTask, count:countTask, math:mathTask, words:wordsTask, letters:lettersTask, me:meTask, mood:moodTask, go:goTask})[mode];
   if(repeat){ (cur && cur.kind==="me" && mode!=="me" ? meTask : fn)(repeat); return; }
   /* время от времени в любой игре — короткий вопрос «Обо мне» (если родитель заполнил анкету) */
   if(mode!=="me" && mode!=="neuro" && meReady() && S.meFreq>0 && ++meTick>=S.meFreq){ meTick=0; meTask(false, true); return; }
@@ -1521,8 +1530,43 @@ function present(cfg){ // cfg: {ty, html, speech, right, opts, cls, okSay, errSa
   cur.render = state=>{ if(st===3 && cfg.hide!==false && !revealed && !state){ hiddenCard(); return; } setCard(cfg.html, state); };
   cur.render(); showArea("answers");
   const sh=shuffle(cfg.opts);
+  if(vsOn(mode) && voiceable(cfg) && !cur.noScore){ voiceStage(sh, cfg); return; }
   renderAnswers(sh, cfg.cls, cfg.fmt);
   say(cfg.speech + readOpts(sh, cfg));
+}
+/* ===== 4-я ступень: вариантов нет, ребенок отвечает голосом ===== */
+const V4_TRACKS = ["q","pred","form","kakoy","odd","want","why","mine","count","math","me","mood","go"];
+const canV4 = tr => !!SR && S.v4!==false && V4_TRACKS.includes(tr);
+const vsOn = tr => !!(tr && S.vs && S.vs[tr] && canV4(tr) && S.st[tr]===3);
+const stageOf = tr => vsOn(tr) ? 4 : S.st[tr];
+const voiceable = cfg => !cfg.fmt && !cfg.noVoice && !["wpic","letter","word"].includes(String(cfg.cls||"").split(" ")[0]) && cfg.opts.every(o=>typeof o==="string" && o.length<40);
+const NUMW = {ноль:0,один:1,одна:1,одно:1,два:2,две:2,три:3,четыре:4,пять:5,шесть:6,семь:7,восемь:8,девять:9,десять:10,одиннадцать:11,двенадцать:12,тринадцать:13,четырнадцать:14,пятнадцать:15,шестнадцать:16,семнадцать:17,восемнадцать:18,девятнадцать:19,двадцать:20};
+const numNorm = t => normW(String(t)).map(w=>NUMW[w]!=null?String(NUMW[w]):w).join(" ");
+function v4Match(right, alts){ const need=numNorm(right);
+  for(const a of alts){ const h=numNorm(a); if(!need) continue; if((" "+h+" ").includes(" "+need+" ")) return {ok:true, t:a}; }
+  const b=bestSpeech(right, alts, true); const allOk=b && b.res && b.res.every(r=>r.k==="ok"); return {ok:!!allOk, t:b?b.t:(alts[0]||"")}; }
+function voiceStage(sh, cfg){
+  const tr=mode; let tries=0; busy=false;
+  storyJudge("Ответь голосом", true, [["jSelf",gx("Сказал сам","Сказала сама"),"self"],["jHint","Подсказка",""],["jNo",gx("Не сказал","Не сказала"),""]]);
+  say(cfg.speech);
+  const label=`${cur.label||cur.speech} → ${cur.right}`;
+  const good=heard=>{ if(busy) return; busy=true; cur.render("ok"); if(cur.onRight) cur.onRight(); $("model").textContent=cur.right; $("model").classList.remove("empty"); say(cur.okSay); onRightFx($("jMic"));
+    noteWeak(cur.wkey, true); logIt(cur.kind==="me"?"me":tr, cur.ty, label, heard?`голосом: «${heard}»`:gx("сам","сама"), true); win(tr); whenQuiet(afterWin,1100); };
+  const hint=()=>{ if(busy) return; cur.hinted=true; showArea("answers"); renderAnswers(sh, cfg.cls, cfg.fmt); say(cfg.speech + readOpts(sh, cfg)); };
+  holdBtn($("jSelf"),()=>good(null));
+  $("jHint").classList.remove("hold"); $("jHint").onclick=()=>{ sfx("tap"); hint(); };
+  holdBtn($("jNo"),()=>{ if(busy) return; busy=true; cur.render("err"); $("model").textContent=cur.right; $("model").classList.remove("empty"); say(cur.errSay||cur.okSay);
+    noteWeak(cur.wkey, false); logIt(cur.kind==="me"?"me":tr, cur.ty, label, gx("не сказал","не сказала"), false); lose(tr); whenQuiet(()=>nextTask(),1300); });
+  const mic=$("jMic"), heardEl=$("jHeard");
+  mic.onclick=()=>{ if(busy) return; if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
+    mic.classList.add("listening"); heardEl.textContent="Слушаю…"; sfx("tap");
+    listen(alts=>{ mic.classList.remove("listening"); if(busy) return;
+      const m=v4Match(cur.right, alts);
+      if(m.ok){ heardEl.textContent=`Услышал: «${m.t}»`; good(m.t); return; }
+      tries++; heardEl.textContent=`Услышал: «${m.t||"…"}». ${tries>=2?"Вот подсказка.":"Скажи еще раз."}`; mascot("oops","Еще раз!");
+      if(tries>=2) hint();
+    }, err=>{ mic.classList.remove("listening"); if(!busy) heardEl.textContent=micFail(err); });
+  };
 }
 /* режим для нечитающих: варианты ответа звучат вслух (только «Пока нет», на этапах 1–2) */
 const nonReader = () => S.reader==="no" || S.reader==="some";
@@ -1541,7 +1585,7 @@ function renderAnswers(opts, cls, fmt){
       if(busy) return; busy=true;
       if(text===cur.right){
         b.classList.add("right"); cur.render("ok"); if(cur.onRight) cur.onRight(); say(cur.okSay); onRightFx(b);
-        noteWeak(cur.wkey, true); logIt(cur.kind==="me"?"me":tr, cur.ty, label, text, true); if(cur.noScore){ whenQuiet(()=>nextTask(),900); } else { win(tr); whenQuiet(afterWin,900); }
+        noteWeak(cur.wkey, true); logIt(cur.kind==="me"?"me":tr, cur.ty, label, cur.hinted?text+" (с подсказкой)":text, !cur.hinted); if(cur.hinted){ neutral(tr); whenQuiet(()=>nextTask(),900); } else if(cur.noScore){ whenQuiet(()=>nextTask(),900); } else { win(tr); whenQuiet(afterWin,900); }
       } else {
         b.classList.add("wrong"); cur.render("err"); onWrongFx();
         [...box.children].forEach(x=>{ if(x.dataset.v===cur.right) x.classList.add("hint"); });
@@ -2918,6 +2962,115 @@ function kakoyTask(repeat){
 }
 
 /* ================= 7. reading ================= */
+/* ================= «Настроение» ================= */
+const MOODS=[{id:"happy",a:"Радостный"},{id:"sad",a:"Грустный"},{id:"angry",a:"Злой"},{id:"scared",a:"Испуганный"},{id:"surprised",a:"Удивленный"},{id:"tired",a:"Уставший"}];
+const MOOD_PIC=new Set([]); /* сюда попадут сгенерированные картинки mood_<id>.webp */
+function moodFace(id,x,y,k){ k=k||1;
+  if(MOOD_PIC.has(id)) return `<g transform="translate(${x},${y})">${ipic("mood_"+id,200*k)}</g>`;
+  const eyes={happy:'<path d="M-38,-10 q12,-14 24,0 M14,-10 q12,-14 24,0" stroke="#3E2723" stroke-width="7" fill="none" stroke-linecap="round"/>',
+    sad:'<circle cx="-26" cy="-8" r="8" fill="#3E2723"/><circle cx="26" cy="-8" r="8" fill="#3E2723"/><path d="M-44,-30 l26,-8 M44,-30 l-26,-8" stroke="#3E2723" stroke-width="6" stroke-linecap="round"/>',
+    angry:'<circle cx="-26" cy="-4" r="8" fill="#3E2723"/><circle cx="26" cy="-4" r="8" fill="#3E2723"/><path d="M-46,-30 l30,12 M46,-30 l-30,12" stroke="#3E2723" stroke-width="8" stroke-linecap="round"/>',
+    scared:'<circle cx="-26" cy="-8" r="15" fill="#fff" stroke="#3E2723" stroke-width="4"/><circle cx="26" cy="-8" r="15" fill="#fff" stroke="#3E2723" stroke-width="4"/><circle cx="-26" cy="-6" r="6" fill="#3E2723"/><circle cx="26" cy="-6" r="6" fill="#3E2723"/><path d="M-42,-36 q16,-8 30,-2 M42,-36 q-16,-8 -30,-2" stroke="#3E2723" stroke-width="5" fill="none" stroke-linecap="round"/>',
+    surprised:'<circle cx="-26" cy="-8" r="10" fill="#3E2723"/><circle cx="26" cy="-8" r="10" fill="#3E2723"/><path d="M-42,-40 q16,-14 32,0 M10,-40 q16,-14 32,0" stroke="#3E2723" stroke-width="5" fill="none" stroke-linecap="round"/>',
+    tired:'<path d="M-40,-6 h28 M12,-6 h28" stroke="#3E2723" stroke-width="7" stroke-linecap="round"/><path d="M-40,-6 q14,10 28,0 M12,-6 q14,10 28,0" stroke="#3E2723" stroke-width="4" fill="none"/>',
+    calm:'<circle cx="-26" cy="-8" r="8" fill="#3E2723"/><circle cx="26" cy="-8" r="8" fill="#3E2723"/>'}[id];
+  const mouth={happy:'<path d="M-34,26 q34,40 68,0 z" fill="#C62828" stroke="#3E2723" stroke-width="5" stroke-linejoin="round"/>',
+    sad:'<path d="M-28,44 q28,-26 56,0" stroke="#3E2723" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M-30,10 q-6,14 0,18 q6,-4 0,-18z" fill="#4FC3F7"/>',
+    angry:'<path d="M-28,40 h56" stroke="#3E2723" stroke-width="8" stroke-linecap="round"/><ellipse cx="-50" cy="18" rx="14" ry="8" fill="#EF5350" opacity=".7"/><ellipse cx="50" cy="18" rx="14" ry="8" fill="#EF5350" opacity=".7"/>',
+    scared:'<path d="M-24,40 q6,-10 12,0 q6,10 12,0 q6,-10 12,0 q6,10 12,0" stroke="#3E2723" stroke-width="5" fill="none" stroke-linecap="round"/>',
+    surprised:'<ellipse cx="0" cy="36" rx="14" ry="18" fill="#6D2B2B" stroke="#3E2723" stroke-width="5"/>',
+    tired:'<ellipse cx="0" cy="38" rx="12" ry="9" fill="#6D2B2B" stroke="#3E2723" stroke-width="4"/>',
+    calm:'<path d="M-20,34 q20,10 40,0" stroke="#3E2723" stroke-width="6" fill="none" stroke-linecap="round"/>'}[id];
+  return `<g transform="translate(${x},${y}) scale(${k})"><circle r="92" fill="#FFCC80" stroke="#8D6E63" stroke-width="5"/><path d="M-90,-20 q-6,-80 90,-74 q96,-6 90,74 q-30,-46 -90,-46 q-60,0 -90,46z" fill="#6D4C41"/>${eyes}${mouth}${id==="tired"?'<text x="62" y="-58" font-family="Rubik,sans-serif" font-weight="800" font-size="34" fill="#5C6BC0">z</text><text x="86" y="-84" font-family="Rubik,sans-serif" font-weight="800" font-size="26" fill="#5C6BC0">z</text>':""}</g>`; }
+const MOOD_SITS=[
+  {m:"sad", t:"У мальчика сломалась машинка.", why:"Потому что сломалась машинка", key:/слома/, pic:"car_red"},
+  {m:"happy", t:"Мальчику подарили мяч.", why:"Потому что ему подарили мяч", key:/подар|мяч/, pic:"ball"},
+  {m:"scared", t:"Рядом громко залаяла собака.", why:"Потому что залаяла собака", key:/собак|лая|лает/, pic:"dog"},
+  {m:"angry", t:"У мальчика забрали мишку.", why:"Потому что забрали мишку", key:/забра|отня/, pic:"toybear"},
+  {m:"surprised", t:"Мальчик открыл коробку, а там котенок!", why:"Потому что в коробке котенок", key:/кот/, pic:"cat"},
+  {m:"tired", t:"Мальчик долго-долго бегал.", why:"Потому что он долго бегал", key:/бега|устал/, pic:"day_walk"},
+  {m:"happy", t:"Мальчику дали конфету.", why:"Потому что ему дали конфету", key:/конфет/, pic:"candy"},
+  {m:"sad", t:"Мальчик уронил яблоко в лужу.", why:"Потому что он уронил яблоко", key:/урон|яблок/, pic:"apple"}];
+const moodById = id => MOODS.find(x=>x.id===id);
+function moodTask(repeat){
+  const L=TRACKS.mood.levels[S.lvl.mood-1], st=S.st.mood, kind=L.kind;
+  if(!repeat || !cur || cur.kind!=="mood"){
+    if(kind==="sit"||kind==="why"){ const t=freshPick(MOOD_SITS, x=>"ms:"+x.t); cur={kind:"mood", sit:t, m:t.m}; }
+    else { const m=freshPick(MOODS, x=>"mo:"+x.id).id; cur={kind:"mood", m}; }
+    cur.others=shuffle(MOODS.filter(x=>x.id!==cur.m).map(x=>x.id)).slice(0, nOpts(st,1,2,3));
+  } else cur.mistake=true;
+  const M=moodById(cur.m), adj=M.a.toLowerCase(); cur.wkey="mood:"+cur.m;
+  clearScene(); room(false);
+  if(kind==="name"){
+    $("sBack").innerHTML=moodFace(cur.m,500,300,2);
+    present({ty:"mood", label:`Какое настроение? → ${M.a}`, html:`<span class="chip" style="background:#F4511E">КАКОЙ</span><span>он?</span>`, speech:"Какое у него настроение? Какой он?", right:M.a, cls:"plain", okSay:`Он ${adj}.`, errSay:`Он ${adj}.`, opts:[M.a, ...cur.others.map(id=>moodById(id).a)], hide:false});
+  } else if(kind==="find"){
+    $("sBack").innerHTML=`<text x="500" y="320" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="64" fill="#BF360C">Где ${esc(adj)}?</text>`;
+    present({ty:"mood", label:`Найди: ${adj}`, html:`<span class="chip" style="background:#F4511E">НАЙДИ</span><span>${esc(adj)}</span>`, speech:`Где ${adj} мальчик?`, right:cur.m, cls:"wpic", fmt:id=>`<svg viewBox="-110 -110 220 220" aria-label="лицо">${moodFace(id,0,0,1)}</svg>`, okSay:`Да, он ${adj}.`, errSay:`Вот ${adj} мальчик.`, opts:[cur.m, ...cur.others], hide:false, noRead:true});
+  } else if(kind==="sit"){
+    const t=cur.sit; $("sBack").innerHTML=`<g transform="translate(330,300)">${wpic(t.pic,300)}</g>`+moodFace("calm",720,290,1.3)+`<text x="720" y="170" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="70" fill="#BF360C">?</text>`;
+    present({ty:"mood", label:`${t.t} → ${M.a}`, html:`<span>${esc(t.t)} Какой он?</span>`, speech:`${t.t} Какой он?`, right:M.a, cls:"plain", okSay:`${t.t.replace(/[.!]$/,"")} — он ${adj}.`, errSay:`Он ${adj}.`, opts:[M.a, ...cur.others.map(id=>moodById(id).a)], hide:false});
+  } else {
+    const t=cur.sit; $("sBack").innerHTML=`<g transform="translate(330,300)">${wpic(t.pic,300)}</g>`+moodFace(t.m,720,300,1.4);
+    moodWhy(t, adj, st);
+  }
+}
+function moodWhy(t, adj, st){
+  busy=false; cur.ty="mood"; const q=`Почему мальчик ${adj}?`; cur.speech=q;
+  cur.render=state=>setCard(`<span class="chip" style="background:#F4511E">ПОЧЕМУ</span><span>${esc(q)}</span>`, state); cur.render(); say(q);
+  const shown = st===1 ? t.why : (st===2 ? "Потому что …" : "");
+  storyJudge(shown?esc(shown):"Ответ скрыт.", !shown, [["jSelf",gx("Сказал сам","Сказала сама"),"self"],["jHelp","С подсказкой","help"],["jNo",gx("Не сказал","Не сказала"),""]]);
+  const done=kind=>{ if(busy) return; busy=true; $("model").textContent=t.why; $("model").classList.remove("empty");
+    const ok=kind==="self"; cur.render(ok?"ok":(kind==="no"?"err":null)); say(`${t.t} Поэтому он ${adj}.`); if(ok) onRightFx($("jMic"));
+    logIt("mood","mood",`${q} → ${t.why}`, cur.voice?`голосом: «${cur.voice}»`:({self:gx("сам","сама"),help:"с подсказкой",no:gx("не сказал","не сказала")})[kind], ok);
+    if(ok){ win("mood"); whenQuiet(afterWin,1500); } else { if(kind==="no") lose("mood"); else neutral("mood"); whenQuiet(()=>nextTask(),1500); } };
+  holdBtn($("jSelf"),()=>done("self")); holdBtn($("jHelp"),()=>done("help")); holdBtn($("jNo"),()=>done("no"));
+  const mic=$("jMic"), heard=$("jHeard");
+  mic.onclick=()=>{ if(busy) return; if(mic.classList.contains("listening")){ try{ recog&&recog.stop(); }catch(e){} return; }
+    mic.classList.add("listening"); heard.textContent="Слушаю…"; sfx("tap");
+    listen(alts=>{ mic.classList.remove("listening"); if(busy) return;
+      const hit=alts.find(a=>t.key.test(String(a).toLowerCase().replace(/ё/g,"е")));
+      if(hit){ cur.voice=hit; heard.textContent=`Услышал: «${hit}»`; done("self"); return; }
+      heard.textContent=`Услышал: «${alts[0]||""}». Скажи еще раз.`; mascot("oops","Еще раз!");
+    }, err=>{ mic.classList.remove("listening"); if(!busy) heard.textContent=micFail(err); });
+  };
+}
+/* ================= «Поехали!» ================= */
+const VEH=[{id:"car_red",n:"красная машина",f:1},{id:"car_blue",n:"синяя машина",f:1},{id:"car_green",n:"зеленая машина",f:1},{id:"car_yellow",n:"желтая машина",f:1},
+  {id:"bus",n:"автобус"},{id:"train",n:"поезд"},{id:"truck",n:"грузовик"},{id:"plane",n:"самолет",v:"летит",air:1},{id:"ship",n:"корабль",v:"плывет",sea:1}];
+const vVerb = v => v.v || "едет";
+const road = y => `<rect x="-600" y="${y}" width="2200" height="90" fill="#78909C"/><path d="M-600,${y+45} H1600" stroke="#fff" stroke-width="6" stroke-dasharray="40 30"/>`;
+/* машина: смотрит вправо (face=1) или влево (-1), едет по оси x от x0 до x1 за dur секунд, по кругу */
+function vehMove(v, y, face, x0, x1, dur, size){ size=size||230;
+  return `<g><animateTransform attributeName="transform" type="translate" values="${x0},${y};${x1},${y}" dur="${dur}s" repeatCount="indefinite"/><g transform="scale(${face},1)">${ipic(v.id,size)}</g></g>`; }
+function goTask(repeat){
+  const L=TRACKS.go.levels[S.lvl.go-1], st=S.st.go, kind=L.kind;
+  if(!repeat || !cur || cur.kind!=="go"){
+    const ground=VEH.filter(v=>!v.air&&!v.sea);
+    if(kind==="race"){ const n=st===3?3:2, vs=shuffle(VEH.filter(v=>v.f)).slice(0,n); const durs=shuffle([2,4.2,6.5].slice(0,n)); cur={kind:"go", vs, durs, slow: st>=2 && Math.random()<.4}; }
+    else { const v = kind==="dir" ? freshPick(VEH, x=>"gv:"+x.id) : freshPick(ground, x=>"gv:"+x.id); cur={kind:"go", v, dir:Math.random()<.5?1:-1, fast:Math.random()<.5, back:Math.random()<.5}; }
+  } else cur.mistake=true;
+  clearScene(); room(false);
+  if(kind==="dir"){ const v=cur.v, d=cur.dir, nm=cap(v.n), verb=vVerb(v), y=v.air?260:v.sea?400:385;
+    const bg = v.air ? `<rect x="-600" y="-200" width="2200" height="1000" fill="#E3F2FD"/>` : v.sea ? `<rect x="-600" y="400" width="2200" height="400" fill="#4FC3F7"/>` : road(410);
+    $("sBack").innerHTML = bg + vehMove(v, y, d, d>0?-150:1150, d>0?1150:-150, 4.5);
+    const right = d>0?"Направо":"Налево";
+    present({ty:"go", label:`${nm} → ${right}`, html:`<span class="chip" style="background:#3949AB">КУДА</span><span>${esc(verb)} ${esc(v.n)}?</span>`, speech:`Куда ${verb} ${v.n}?`, right, cls:"plain", okSay:`${nm} ${verb} ${right.toLowerCase()}.`, errSay:`${nm} ${verb} ${right.toLowerCase()}.`, opts: st===1?["Направо","Налево"]:["Направо","Налево", ...(st===3?["Вверх","Вниз"]:["Вверх"])], hide:false});
+  } else if(kind==="speed"){ const v=cur.v, nm=cap(v.n), dur=cur.fast?1.4:8;
+    $("sBack").innerHTML = road(410) + vehMove(v, 385, 1, -150, 1150, dur);
+    const right=cur.fast?"Быстро":"Медленно";
+    present({ty:"go", label:`${nm} → ${right}`, html:`<span class="chip" style="background:#3949AB">КАК</span><span>едет ${esc(v.n)}?</span>`, speech:`Как едет ${v.n}: быстро или медленно?`, right, cls:"plain", okSay:`${nm} едет ${right.toLowerCase()}.`, errSay:`${nm} едет ${right.toLowerCase()}.`, opts:["Быстро","Медленно"], hide:false});
+  } else if(kind==="race"){ const vs=cur.vs, n=vs.length, lanes = n===2 ? [170,400] : [110,280,450];
+    $("sBack").innerHTML = lanes.map((y,i)=>road(y+45)+vehMove(vs[i], y+42, 1, -150, 1150, cur.durs[i], 190)).join("");
+    const pickIdx = cur.slow ? cur.durs.indexOf(Math.max(...cur.durs)) : cur.durs.indexOf(Math.min(...cur.durs));
+    const w=cur.slow?"медленнее":"быстрее", win_=vs[pickIdx], other=vs.find((x,i)=>i!==pickIdx);
+    present({ty:"go", label:`Кто ${w}? → ${win_.n}`, html:`<span class="chip" style="background:#3949AB">КТО</span><span>едет ${w}?</span>`, speech:`Кто едет ${w}?`, right:cap(win_.n), cls:"plain", okSay:`${cap(win_.n)} едет ${w}, чем ${other.n}.`, errSay:`${cap(win_.n)} едет ${w}.`, opts:vs.map(x=>cap(x.n)), hide:false});
+  } else { const v=cur.v, nm=cap(v.n), face=cur.dir, mv = cur.back ? -face : face;
+    $("sBack").innerHTML = road(410) + vehMove(v, 385, face, mv>0?-150:1150, mv>0?1150:-150, cur.back?7:4);
+    const right=cur.back?"Назад":"Вперед";
+    present({ty:"go", label:`${nm} → ${right}`, html:`<span class="chip" style="background:#3949AB">КУДА</span><span>вперед или назад?</span>`, speech:`${nm} едет вперед или назад?`, right, cls:"plain", okSay:`${nm} едет ${right.toLowerCase()}.`, errSay:`${nm} едет ${right.toLowerCase()}.`, opts:["Вперед","Назад"], hide:false});
+  }
+}
 /* ================= «Обо мне» ================= */
 let meTick=0;
 const ME = () => S.me || (S.me={});
@@ -3203,9 +3356,9 @@ function renderTrack(tr, box){
   const T=TRACKS[tr], r=readiness(tr), L=S.lvl[tr], max=T.levels.length;
   const d=document.createElement("details"); d.className="pbox"; d.dataset.tr=tr; if(r.ready || openTracks.has(tr)) d.open=true;
   d.addEventListener("toggle", ()=>{ if(d.open) openTracks.add(tr); else openTracks.delete(tr); });
-  d.innerHTML=`<summary>${T.title} — уровень ${L}, ступень ${S.st[tr]}${r.ready?" · готов к следующему":""}</summary>
+  d.innerHTML=`<summary>${T.title} — уровень ${L}, ступень ${stageOf(tr)}${r.ready?" · готов к следующему":""}</summary>
     <ol class="levels">${T.levels.map((l,i)=>`<li class="${i+1===L?"cur":""}">${esc(l.name)}</li>`).join("")}</ol>
-    <p class="hint-txt">Ступени: ${T.stages}</p>
+    <p class="hint-txt">Ступени: ${T.stages}${canV4(tr)?" 4 — вариантов нет: ребенок отвечает голосом, кнопка «Подсказка» возвращает варианты.":""}</p>
     <div class="row"><span class="lbl">Уровень</span><span class="seg" data-k="lvl"></span></div>
     <div class="row"><span class="lbl">Ступень подсказок</span><span class="seg" data-k="st"></span></div>
     <div class="ready ${r.ready?"go":""}">${
@@ -3216,7 +3369,7 @@ function renderTrack(tr, box){
     <div class="row" data-reset><button class="ghost">Начать уровень ${L} заново</button><span class="hint-txt">Подсказки вернутся на ступень 1, счетчик готовности обнулится. Журнал сохранится.</span></div>`;
   box.appendChild(d);
   seg(d.querySelector('[data-k="lvl"]'), T.levels.map((_,i)=>({label:(!S.full&&i>0?"🔒 ":"")+String(i+1),v:i+1})), v=>S.lvl[tr]===v, v=>{ if(!S.full && v>1){ showBuy(); return; } setLevel(tr,v); });
-  seg(d.querySelector('[data-k="st"]'), [1,2,3].map(v=>({label:String(v),v})), v=>S.st[tr]===v, v=>{ S.st[tr]=v; run.streak[tr]=0; run.errs[tr]=0; });
+  seg(d.querySelector('[data-k="st"]'), (canV4(tr)?[1,2,3,4]:[1,2,3]).map(v=>({label:String(v),v})), v=>stageOf(tr)===v, v=>{ S.st[tr]=Math.min(3,v); (S.vs||(S.vs={}))[tr]=v===4; run.streak[tr]=0; run.errs[tr]=0; });
   const up=d.querySelector("[data-up]"); if(up) up.onclick=()=>{ setLevel(tr, L+1); save(); renderParent(); };
   const bb=d.querySelector("[data-buy]"); if(bb) bb.onclick=showBuy;
   const rs=d.querySelector("[data-reset]");
@@ -3305,6 +3458,7 @@ function renderRewSeg(){ seg($("rewSeg"), [{label:"Часто", v:"often"},{labe
                                     : "В бесплатной версии новый друг выдается за каждые 5 правильных ответов. Настройка «Реже» работает в полной версии."; }
 function renderParent(){ renderBuy(); renderResetRow(); renderKidBox(); renderRewSeg(); renderMeBox();
   seg($("readSeg"), READ_LIST, v=>(S.reader||"yes")===v, v=>{ S.reader=v; });
+  seg($("v4Seg"), [{label:"включена",v:true},{label:"выключена",v:false}], v=>(S.v4!==false)===v, v=>{ S.v4=v; });
   seg($("caseSeg"), [{label:"ЗАГЛАВНЫЕ",v:true},{label:"строчные",v:false}], v=>(S.caseUp!==false)===v, v=>{ S.caseUp=v; });
   const tb=$("tracksBox"); tb.innerHTML=""; TRACK_KEYS.forEach(k=>renderTrack(k, tb));
   renderDayEd(); renderPhotos();
@@ -3323,7 +3477,7 @@ function renderParent(){ renderBuy(); renderResetRow(); renderKidBox(); renderRe
   $("repShare").onclick=()=>{ try{ navigator.share({title:kidName()+" — отчёт", text:$("repText").value}); }catch(e){} };
   const last=a=>a.slice(-20), rows=[];
   ["na","v","pod","ryadom","iz"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty==="pred" && (" "+l.task+" ").includes(" "+PREPS[k].w+" "))); if(a.length) rows.push({n:`Предлог ${PREPS[k].w}`, a}); });
-  ["me","words","letters","chto","gde","kto","delaet","sent","kakoy","form","say","day","read","odd","listen","mine","want","why","count"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty===k)); if(a.length) rows.push({n:TYPE_NAMES[k], a}); });
+  ["mood","go","me","words","letters","chto","gde","kto","delaet","sent","kakoy","form","say","day","read","odd","listen","mine","want","why","count"].forEach(k=>{ const a=last(S.log.filter(l=>l.ty===k)); if(a.length) rows.push({n:TYPE_NAMES[k], a}); });
   const tries=S.log.filter(l=>l.ty==="sayTry").slice(-50), ec=k=>tries.filter(l=>(l.err||[]).includes(k)).length;
   const errTiles = tries.length ? ["ending","prep","miss"].map(k=>`<div class="stat"><b>${ec(k)}</b><div>Голосом: ${({ending:"ошибки в окончаниях",prep:"не тот предлог",miss:"пропущенные слова"})[k]}</div></div>`).join("") : "";
   $("stats").innerHTML = rows.length||tries.length ? rows.map(r=>`<div class="stat"><b>${r.a.filter(x=>x.ok).length} из ${r.a.length}</b><div>${r.n}</div></div>`).join("")+errTiles : `<p class="hint-txt">Здесь появятся результаты по каждому типу заданий.</p>`;
@@ -3339,7 +3493,7 @@ refreshMascot(); applyCalm();
 renderStars(); renderHome(); if(!S.kid || !S.kid.name) openKidSetup();
 (function(){ const sp=$("splash"); let gone=false; const hide=()=>{ if(gone) return; gone=true; sp.classList.add("out"); setTimeout(()=>sp.remove(),400); };
   sp.addEventListener("pointerdown", hide); setTimeout(hide, matchMedia("(prefers-reduced-motion: reduce)").matches ? 500 : 1300); })();
-window.__alan = {PLACES, OBJ, CITEMS, COLORS, ODD_PICS, DAY_ITEMS, realTank, emo, getCur:()=>cur, say:t=>say(t), sayParts:t=>splitSay(t).parts.map(voiceText), kidName:()=>kidName(), openParent:()=>openParent(), rewardEvery:()=>rewardEvery(), afterWin:()=>afterWin(), run, STORY3, showSurprise:(n)=>showSurprise(n||(()=>{})), openFinds, FINDS, showReward:()=>showReward(), TRACKS, S, makeActScene, STORIES, FRAMES, OBJS, DAY_ITEMS, start, nextTask};
+window.__alan = {v4Match, PLACES, OBJ, CITEMS, COLORS, ODD_PICS, DAY_ITEMS, realTank, emo, getCur:()=>cur, say:t=>say(t), sayParts:t=>splitSay(t).parts.map(voiceText), kidName:()=>kidName(), openParent:()=>openParent(), rewardEvery:()=>rewardEvery(), afterWin:()=>afterWin(), run, STORY3, showSurprise:(n)=>showSurprise(n||(()=>{})), openFinds, FINDS, showReward:()=>showReward(), TRACKS, S, makeActScene, STORIES, FRAMES, OBJS, DAY_ITEMS, start, nextTask};
 /* ===== Web version for speech therapists: access by code (hashes in web-codes.txt; remove a line to revoke) ===== */
 const APPSTORE_URL="https://apps.apple.com/app/id6832155048";
 if(!IS_NATIVE){
