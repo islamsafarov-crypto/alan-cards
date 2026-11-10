@@ -305,7 +305,14 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
 .danger{color:var(--err)}
 .msg{font-size:14px;font-weight:700;color:var(--err)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-@media (max-width:520px){.speak{width:52px;height:52px}.slot{min-width:96px}}
+@media (max-width:520px){.speak{width:52px;height:52px}.slot{min-width:96px}
+  /* телефон: шапка не должна быть шире экрана */
+  header{gap:8px}.iconbtn{width:46px;height:46px;border-radius:14px}
+  .prog{flex:1 1 auto;width:auto;min-width:0}
+  .stars{gap:3px;flex:none}.stars span{width:15px;height:15px;border-width:2px!important}
+  header:has(.prog:not([hidden])) .hdr-title{display:none}}
+.app{width:100%;min-width:0}
+@supports (height:100dvh){ html,body{height:100dvh} }
 
 /* ===== playful look: sky background, glossy picture tiles, 3D buttons ===== */
 html{background:#8FD0FA}
@@ -3263,7 +3270,7 @@ function goTask(repeat){
   if(kind==="dir"){ const v=cur.v, d=cur.dir, nm=cap(v.n), verb=vVerb(v);
     $("sBack").innerHTML = bigScene(v, d, -d, 1); sceneFocus=[200,60,800,580];
     const right = d>0?"Направо":"Налево";
-    present({ty:"go", label:`${nm} → ${right}`, html:`<span class="chip" style="background:#3949AB">КУДА</span><span>${esc(verb)} ${esc(v.n)}?</span>`, speech:`Куда ${verb} ${v.n}?`, right, cls:"plain", okSay:`${nm} ${verb} ${right.toLowerCase()}.`, errSay:`${nm} ${verb} ${right.toLowerCase()}.`, opts: st===1?["Направо","Налево"]:["Направо","Налево", ...(st===3?["Вверх","Вниз"]:["Вверх"])], hide:false});
+    present({ty:"go", label:`${nm} → ${right}`, html:`<span class="chip" style="background:#3949AB">КУДА</span><span>${esc(verb)} ${esc(v.n)}?</span>`, speech:`Куда ${verb} ${v.n}?`, right, cls:"plain", okSay:`${nm} ${verb} ${right.toLowerCase()}.`, errSay:`${nm} ${verb} ${right.toLowerCase()}.`, opts: (st===1||!v.air)?["Направо","Налево"]:["Направо","Налево", ...(st===3?["Вверх","Вниз"]:["Вверх"])], hide:false});
   } else if(kind==="speed"){ const v=cur.v, nm=cap(v.n), dur=cur.fast?1.4:8;
     $("sBack").innerHTML = bigScene(v, 1, -1, cur.fast?2.6:0.35); sceneFocus=[200,60,800,580];
     const right=cur.fast?"Быстро":"Медленно";
