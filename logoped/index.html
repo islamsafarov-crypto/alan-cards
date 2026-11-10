@@ -312,7 +312,7 @@ td.y{color:var(--ok);font-weight:800} td.n{color:var(--err);font-weight:800}
   .stars{gap:3px;flex:none}.stars span{width:15px;height:15px;border-width:2px!important}
   header:has(.prog:not([hidden])) .hdr-title{display:none}}
 .app{width:100%;min-width:0}
-@supports (height:100dvh){ html,body{height:100dvh} }
+@supports (height:100dvh){ html{height:100dvh} body{height:100%} }
 
 /* ===== playful look: sky background, glossy picture tiles, 3D buttons ===== */
 html{background:#8FD0FA}
