@@ -988,8 +988,8 @@ const TRACKS = {
     stages:"1 — два варианта; 2 — три; 3 — четыре (где можно).",
     levels:[{name:"Куда едет: направо или налево?", kind:"dir"},{name:"Быстро или медленно?", kind:"speed"},{name:"Кто едет быстрее?", kind:"race"},{name:"Вперед или назад?", kind:"back"}]},
   me:{title:"Обо мне", c:"#00897B", b:"#E0F2F1", sub:"Как меня зовут, мама и папа, где я живу, телефон.", chips:[["Я","#00897B"]],
-    stages:"1 — два варианта; 2 — три; 3 — четыре, и варианты похожи. Данные заполняет родитель: настройки → «Обо мне».",
-    levels:[{name:"Как тебя зовут? Кто мама и папа?", kind:"who"},{name:"Где ты живешь?", kind:"where"},{name:"Телефон мамы или папы", kind:"phone"},{name:"Ответь голосом", kind:"voice"}]},
+    stages:"1 — два варианта; 2 — три; 3 — четыре. Вопросы идут вперемешку: имя, возраст, мама и папа, город, адрес, телефон. Данные заполняет родитель: настройки → «Обо мне».",
+    levels:[{name:"Выбери ответ про себя", kind:"easy"},{name:"Похожие варианты", kind:"hard"},{name:"Ответь голосом", kind:"voice"}]},
   letters:{title:"Буквы", c:"#EF6C00", b:"#FFF3E0", sub:"Найди букву; с какой буквы начинается слово.", chips:[["А","#EF6C00"],["Б","#EF6C00"]],
     stages:"1 — два варианта; 2 — три; 3 — четыре. На уровне 3: на этапе 1 первая буква в слове выделена цветом, на этапе 3 слово не написано — только картинка. Новые буквы добавляются постепенно.",
     levels:[{name:"Найди такую же букву", kind:"same"},{name:"Услышь и найди букву", kind:"hear"},{name:"С какой буквы начинается слово?", kind:"first"}]},
@@ -1526,7 +1526,7 @@ $("findsClose").onclick=()=>{ $("finds").hidden=true; renderHome(); };
 function nextTask(repeat){ TASK_PICKS=[]; busy=false; revealed=false; { const m=$("mascot"); m.classList.remove("off","m-happy","m-oops","m-wave"); const bb=$("mBubble"); if(bb) bb.classList.remove("on"); } const fn=({pred:predTask, q:qTask, sent:sentTask, form:formTask, say:sayTask, day:dayTask, read:readTask, kakoy:kakoyTask, odd:oddTask, neuro:neuroTask, listen:listenTask, mine:mineTask, want:wantTask, why:whyTask, count:countTask, math:mathTask, words:wordsTask, letters:lettersTask, me:meTask, mood:moodTask, go:goTask, iz:izTask, act:actTask, opp:oppTask, ask:askTask})[mode];
   if(repeat){ (cur && cur.kind==="me" && mode!=="me" ? meTask : fn)(repeat); return; }
   /* время от времени в любой игре — короткий вопрос «Обо мне» (если родитель заполнил анкету) */
-  if(mode!=="me" && mode!=="neuro" && meReady() && S.meFreq>0 && ++meTick>=S.meFreq){ meTick=0; meTask(false, true); return; }
+  if(mode!=="me" && mode!=="neuro" && meEnough() && S.meFreq>0 && ++meTick>=S.meFreq){ meTick=0; meTask(false, true); return; }
   /* тот же вопрос не повторяется среди последних четырех: если выпал повтор — тихо собираем другой */
   const hk=mode+":"+S.lvl[mode], hist=TASK_HIST[hk]||(TASK_HIST[hk]=[]); let key="", held=[];
   sayHold=held;
@@ -3336,7 +3336,7 @@ function meFacts(kind){ const m=ME(), nm=meName(), g=kidG(), all=[];
   if(m.city) all.push({id:"city", q:"В каком городе ты живешь?", ans:m.city, pool:ME_CITIES, say:"Я живу в городе"});
   if(m.street) all.push({id:"addr", q:"Какой у тебя адрес?", ans:`ул. ${m.street}${m.house?", д. "+m.house:""}`, addr:true});
   if(meDigits().length>=5) all.push({id:"phone", q:`Какой телефон у ${m.phWho==="dad"?"папы":"мамы"}?`, ans:mePhoneFmt(), phone:true});
-  const want = kind==="who" ? ["name","age","mom","dad"] : kind==="where" ? ["city","addr"] : kind==="phone" ? ["phone"] : kind==="voice" ? ["name","age","mom","dad","city"] : ["name","age","mom","dad","city","addr","phone"];
+  const want = kind==="voice" ? ["name","age","mom","dad","city"] : ["name","age","mom","dad","city","addr","phone"];
   const f=all.filter(x=>want.includes(x.id)); return f.length ? f : all.filter(x=>x.id==="name"); }
 function meWrong(f, n, st){ const m=ME(), out=new Set(), lowA=f.ans.toLowerCase();
   if(f.pool) shuffle(f.pool.filter(x=>x.toLowerCase()!==lowA)).forEach(x=>out.add(x));
@@ -3350,17 +3350,33 @@ function meWrong(f, n, st){ const m=ME(), out=new Set(), lowA=f.ans.toLowerCase(
       for(let i=0;i<k;i++){ const j=d.length-1-Math.floor(Math.random()*Math.min(7,d.length)); a[j]=String((+a[j]+1+Math.floor(Math.random()*8))%10); }
       const v=a.join(""); if(v!==d) out.add(mePhoneFmt(v)); } }
   out.delete(f.ans); return [...out].slice(0,n); }
+/* колода вопросов: все заполненные пункты по кругу, без повтора подряд */
+const ME_DECK={};
+if(S.lvl && S.lvl.me>3) S.lvl.me=3;
+function meNext(kind){ const facts=meFacts(kind), ids=facts.map(f=>f.id), d=ME_DECK[kind]||(ME_DECK[kind]={q:[],last:null});
+  d.q=d.q.filter(id=>ids.includes(id));
+  if(!d.q.length){ d.q=shuffle(ids); if(d.q.length>1 && d.q[0]===d.last) d.q.push(d.q.shift()); }
+  const id=d.q.shift(); d.last=id; return facts.find(f=>f.id===id); }
+const meEnough = () => meReady() && meFacts("any").length>=3;
+function meSetupScreen(){
+  clearScene(); room(false); busy=false; cur={kind:"me", ty:"me", speech:""};
+  $("sBack").innerHTML=`<g transform="translate(500,300)">${ME_ICON.kid(0,0,3.2)}</g>`;
+  cur.render=state=>setCard(`<span class="chip" style="background:#00897B">ОБО МНЕ</span><span>Сначала — для родителей</span>`, state); cur.render();
+  $("judge").innerHTML=`<div class="model">Чтобы играть, мама или папа заполняют «Обо мне»: имена мамы и папы, возраст, город, адрес, телефон. Нужно хотя бы три пункта.</div><div class="jrow" style="justify-content:center"><button class="primary" id="meFill" style="width:auto;font-size:22px;padding:16px 32px">Заполнить «Обо мне»</button></div>`;
+  showArea("judge");
+  $("meFill").onclick=()=>{ openParent(); const b=$("meBox"); if(b){ b.open=true; setTimeout(()=>b.scrollIntoView({behavior:"smooth", block:"start"}),60); } };
+}
 function meTask(repeat, interlude){
-  const lvKind = interlude ? "any" : TRACKS.me.levels[S.lvl.me-1].kind, st = interlude ? 1 : S.st.me;
-  if(!repeat || !cur || cur.kind!=="me"){ const facts=meFacts(lvKind==="voice"&&!interlude?"voice":lvKind);
-    cur={kind:"me", f:freshPick(facts, x=>"me:"+x.id), interlude:!!interlude}; }
+  if(!interlude && !meEnough()) return meSetupScreen();
+  const lvKind = interlude ? "any" : (TRACKS.me.levels[Math.min(S.lvl.me, TRACKS.me.levels.length)-1]||TRACKS.me.levels[0]).kind, st = interlude ? 1 : S.st.me;
+  if(!repeat || !cur || cur.kind!=="me" || !cur.f){ cur={kind:"me", f:meNext(lvKind==="voice"&&!interlude?"voice":"any"), interlude:!!interlude}; }
   else cur.mistake=true;
   const f=cur.f; cur.wkey="me:"+f.id; cur.noScore=!!cur.interlude;
   meScene(f.id);
   const ok=meSlotText(f.id);
   if(lvKind==="voice" && !cur.interlude) return meVoice(f, st, ok);
   const chip=`<span class="chip" style="background:#00897B">ОБО МНЕ</span>`;
-  const opts=[f.ans, ...meWrong(f, nOpts(st,1,2,3), st)];
+  const opts=[f.ans, ...meWrong(f, nOpts(st,1,2,3), lvKind==="hard" ? 3 : 1)];
   present({ty:"me", label:`${f.q} → ${f.ans}`, html:`${chip}<span>${esc(f.q)}</span>`, speech:f.q, right:f.ans, cls:f.ages?"digit":f.phone?"plain mephone":"plain", okSay:ok||f.ans, errSay:ok||f.ans, opts, hide:false, noRead:true});
 }
 function meVoice(f, st, okText){
