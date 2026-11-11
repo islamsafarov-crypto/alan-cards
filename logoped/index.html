@@ -3433,7 +3433,7 @@ function renderMeRecs(){ const box=$("meRecs"); box.innerHTML=""; const canRec=!
   const slots=meSlots(); if(!slots.length){ box.innerHTML='<p class="hint-txt">Сначала заполните данные выше — здесь появятся фразы для записи.</p>'; return; }
   slots.forEach(([id,text])=>{ const r=ME_REC[id], has=r && r.text===text, stale=r && r.text!==text;
     const card=document.createElement("div"); card.className="me-rec";
-    card.innerHTML=`<div class="me-rt">${esc(text)}</div><div class="me-st ${has?"ok":""}">${has?"✓ ваш голос":stale?"данные изменились — запишите заново":(IS_ANDROID?"сейчас читает голос телефона":"сейчас читает голос iPhone")}</div><div class="me-btns"></div>`;
+    card.innerHTML=`<div class="me-rt">${esc(text)}</div><div class="me-st ${has?"ok":""}">${has?"✓ ваш голос":stale?"данные изменились — запишите заново":(/android/i.test(navigator.userAgent)?"сейчас читает голос телефона":"сейчас читает голос iPhone")}</div><div class="me-btns"></div>`;
     const bx=card.querySelector(".me-btns");
     const b=(t,cls,fn)=>{ const x=document.createElement("button"); x.className=cls; x.textContent=t; x.onclick=fn; bx.appendChild(x); return x; };
     b("▶ Послушать","me-play", ()=>{ sfx("tap"); say(text); });
@@ -3451,7 +3451,7 @@ function renderMeRecs(){ const box=$("meRecs"); box.innerHTML=""; const canRec=!
     if(r){ const d=document.createElement("button"); d.className="me-del"; d.textContent="Удалить запись"; d.onclick=()=>{ meRecPut(id,null).then(renderMeRecs); }; card.appendChild(d); }
     box.appendChild(card); });
   const left=7-slots.length; if(left>0) box.insertAdjacentHTML("beforeend",'<p class="hint-txt">Заполните остальные поля выше (возраст, мама, папа, город, адрес, телефон) — здесь появятся новые фразы.</p>');
-  if(!canRec) box.insertAdjacentHTML("beforeend",'<p class="hint-txt">Запись голоса на этом устройстве недоступна — звучит '+(IS_ANDROID?'голос телефона':'голос iPhone')+'.</p>'); }
+  if(!canRec) box.insertAdjacentHTML("beforeend",'<p class="hint-txt">Запись голоса на этом устройстве недоступна — звучит '+(/android/i.test(navigator.userAgent)?'голос телефона':'голос iPhone')+'.</p>'); }
 /* анкета сохраняется сразу при вводе — переключатели и перерисовка ничего не стирают */
 const ME_FIELDS=["meSur","meAge","meMom","meDad","meCity","meStreet","meHouse","mePhone"];
 function meRead(){ const m=ME(), v=id=>$(id).value.trim();
