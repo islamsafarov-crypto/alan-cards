@@ -346,6 +346,16 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
 .ready-scr .rb:active{transform:translateY(5px);box-shadow:0 2px 0 rgba(0,60,120,.3)}
 .jbtn{box-shadow:0 4px 0 rgba(0,0,0,.12)}
 .judge .heard, .judge .jnote{color:#21415E}
+.me-rec{background:#F5F9FF;border:2px solid #D6E4F5;border-radius:16px;padding:12px;margin:10px 0}
+.me-rt{font-size:19px;font-weight:800;line-height:1.3}
+.me-st{font-size:14px;color:#888;margin:4px 0 10px}.me-st.ok{color:#2E7D32;font-weight:800}
+.me-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.me-btns button{padding:14px 8px;border-radius:14px;font-weight:800;font-size:17px;border:3px solid;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.me-play{background:#EEF4FF;border-color:#2F6FEB!important;color:#1B4DB8}
+.me-recb{background:#FFEDEE;border-color:#E53935!important;color:#C62828}
+.me-recb.on{background:#E53935;color:#fff;animation:mepulse 1s ease-in-out infinite}
+@keyframes mepulse{50%{opacity:.6}}
+.me-del{margin-top:8px;font-size:14px;color:#C62828;background:none;padding:4px 0;font-weight:700}
 </style>
 
 <div class="splash" id="splash" aria-hidden="true">
@@ -493,7 +503,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
       <div class="row"><span>Вопросы «Обо мне» в других играх:</span><span class="seg" id="meFreqSeg"></span></div>
       <div class="row"><button class="primary" id="meSave">Сохранить</button><span class="msg" id="meMsg"></span></div>
       <h4 style="margin:14px 0 4px">Ваш голос</h4>
-      <p class="hint-txt">Запишите фразы своим голосом — ребенок лучше запоминает родной голос. Пока записи нет, фразу читает голос iPhone. Нажмите «Записать», скажите фразу, нажмите «Стоп».</p>
+      <p class="hint-txt">Запишите фразы своим голосом — ребенок лучше запоминает родной голос. Пока записи нет, фразу читает голос iPhone. Нажмите «Записать», скажите фразу, нажмите «Стоп» — запись сразу проиграется.</p>
       <div id="meRecs"></div>
     </details>
     <div id="tracksBox" style="display:flex;flex-direction:column;gap:12px"></div>
@@ -3418,30 +3428,39 @@ function renderMeBox(){ const m=ME();
   seg($("mePhSeg"), [{label:"мамы",v:"mom"},{label:"папы",v:"dad"}], v=>(m.phWho||"mom")===v, v=>{ ME().phWho=v; });
   seg($("meFreqSeg"), [{label:"нет",v:0},{label:"редко",v:12},{label:"часто",v:6}], v=>(S.meFreq??12)===v, v=>{ S.meFreq=v; });
   renderMeRecs(); }
+let meRecTimer=null;
 function renderMeRecs(){ const box=$("meRecs"); box.innerHTML=""; const canRec=!!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-  const slots=meSlots(); if(!slots.length){ box.innerHTML='<p class="hint-txt">Сначала заполните и сохраните данные выше.</p>'; return; }
+  const slots=meSlots(); if(!slots.length){ box.innerHTML='<p class="hint-txt">Сначала заполните данные выше — здесь появятся фразы для записи.</p>'; return; }
   slots.forEach(([id,text])=>{ const r=ME_REC[id], has=r && r.text===text, stale=r && r.text!==text;
-    const row=document.createElement("div"); row.className="row"; row.style.cssText="align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0";
-    row.innerHTML=`<span style="flex:1 1 220px">${esc(text)} <small style="color:${has?"#2E7D32":"#888"}">${has?"— ваш голос":stale?"— данные изменились, запишите заново":"— голос iPhone"}</small></span>`;
-    const b=(t,fn)=>{ const x=document.createElement("button"); x.textContent=t; x.onclick=fn; row.appendChild(x); return x; };
-    b("▶ Послушать", ()=>{ sfx("tap"); say(text); });
-    if(canRec){ const rb=b("● Записать", ()=>{
+    const card=document.createElement("div"); card.className="me-rec";
+    card.innerHTML=`<div class="me-rt">${esc(text)}</div><div class="me-st ${has?"ok":""}">${has?"✓ ваш голос":stale?"данные изменились — запишите заново":(IS_ANDROID?"сейчас читает голос телефона":"сейчас читает голос iPhone")}</div><div class="me-btns"></div>`;
+    const bx=card.querySelector(".me-btns");
+    const b=(t,cls,fn)=>{ const x=document.createElement("button"); x.className=cls; x.textContent=t; x.onclick=fn; bx.appendChild(x); return x; };
+    b("▶ Послушать","me-play", ()=>{ sfx("tap"); say(text); });
+    if(canRec){ const rb=b(has?"● Записать заново":"● Записать","me-recb", ()=>{
         if(meRecorder){ try{ meRecorder.stop(); }catch(e){} return; }
         navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{ const chunks=[]; let mr;
           try{ mr=new MediaRecorder(stream); }catch(e){ stream.getTracks().forEach(t=>t.stop()); $("meMsg").textContent="Запись голоса недоступна на этом устройстве."; return; }
-          meRecorder=mr; rb.textContent="■ Стоп"; rb.classList.add("primary");
+          meRecorder=mr; let sec=0; rb.classList.add("on"); rb.textContent="■ Стоп  0 с";
+          clearInterval(meRecTimer); meRecTimer=setInterval(()=>{ sec++; rb.textContent=`■ Стоп  ${sec} с`; },1000);
           mr.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
-          mr.onstop=()=>{ stream.getTracks().forEach(t=>t.stop()); meRecorder=null; const blob=new Blob(chunks,{type:mr.mimeType||"audio/mp4"});
+          mr.onstop=()=>{ clearInterval(meRecTimer); stream.getTracks().forEach(t=>t.stop()); meRecorder=null; const blob=new Blob(chunks,{type:mr.mimeType||"audio/mp4"});
             if(blob.size>2000) meRecPut(id,{text,blob}).then(()=>{ renderMeRecs(); try{ new Audio(URL.createObjectURL(blob)).play(); }catch(e){} }); else renderMeRecs(); };
           mr.start(); setTimeout(()=>{ if(meRecorder===mr) try{ mr.stop(); }catch(e){} }, 12000);
         }).catch(()=>{ $("meMsg").textContent="Нет доступа к микрофону. Разрешите его в настройках iPhone."; }); }); }
-    if(r) b("✕", ()=>{ meRecPut(id,null).then(renderMeRecs); });
-    box.appendChild(row); });
-  if(!canRec) box.insertAdjacentHTML("beforeend",'<p class="hint-txt">Запись голоса на этом устройстве недоступна — звучит голос iPhone.</p>'); }
-function bindMeBox(){ $("meSave").onclick=()=>{ const m=ME(), v=id=>$(id).value.trim();
+    if(r){ const d=document.createElement("button"); d.className="me-del"; d.textContent="Удалить запись"; d.onclick=()=>{ meRecPut(id,null).then(renderMeRecs); }; card.appendChild(d); }
+    box.appendChild(card); });
+  const left=7-slots.length; if(left>0) box.insertAdjacentHTML("beforeend",'<p class="hint-txt">Заполните остальные поля выше (возраст, мама, папа, город, адрес, телефон) — здесь появятся новые фразы.</p>');
+  if(!canRec) box.insertAdjacentHTML("beforeend",'<p class="hint-txt">Запись голоса на этом устройстве недоступна — звучит '+(IS_ANDROID?'голос телефона':'голос iPhone')+'.</p>'); }
+/* анкета сохраняется сразу при вводе — переключатели и перерисовка ничего не стирают */
+const ME_FIELDS=["meSur","meAge","meMom","meDad","meCity","meStreet","meHouse","mePhone"];
+function meRead(){ const m=ME(), v=id=>$(id).value.trim();
   m.sur=v("meSur"); m.age=v("meAge")?Math.max(0,Math.min(30,parseInt(v("meAge"))||0))||"":""; m.mom=cap(v("meMom")); m.dad=cap(v("meDad"));
-  m.city=cap(v("meCity")); m.street=v("meStreet"); m.house=v("meHouse"); m.phone=v("mePhone"); m.saved=true; save(); renderMeBox();
-  $("meMsg").textContent="Сохранено"; }; }
+  m.city=cap(v("meCity")); m.street=v("meStreet"); m.house=v("meHouse"); m.phone=v("mePhone");
+  if(ME_FIELDS.some(id=>$(id).value.trim())) m.saved=true; save(); }
+function bindMeBox(){
+  ME_FIELDS.forEach(id=>{ const el=$(id); el.oninput=()=>{ meRead(); $("meMsg").textContent=""; }; el.onchange=()=>{ meRead(); renderMeRecs(); }; });
+  $("meSave").onclick=()=>{ meRead(); ME().saved=true; save(); renderMeBox(); $("meMsg").textContent="Сохранено ✓"; }; }
 /* ================= «Читаем словами» (глобальное чтение) ================= */
 const WORD_SETS = [
   [["МЯЧ","ball"],["КОТ","cat"],["ТАНК","tank"],["МИШКА","bear"],["БАНАН","banana"]],
