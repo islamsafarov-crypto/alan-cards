@@ -257,7 +257,7 @@ body.calm .wag,body.calm .zzz,body.calm .eyes,body.calm .m-body{animation:none!i
 .sheet p{margin:0;font-size:18px;color:var(--muted)}
 .big-btn{background:var(--where);color:#fff;font-family:var(--display);font-weight:700;font-size:24px;padding:14px 40px;border-radius:16px}
 
-.tanks{position:fixed;inset:0;background:var(--bg);z-index:25;overflow-y:auto}
+.tanks{position:fixed;inset:0;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);background:var(--bg);z-index:25;overflow-y:auto}
 .tanks-in{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px;display:flex;flex-direction:column;gap:16px}
 .tanks h2{font-family:var(--display);font-size:30px;margin:0;flex:1}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
@@ -267,7 +267,7 @@ body.calm .wag,body.calm .zzz,body.calm .eyes,body.calm .m-body{animation:none!i
 .tcard b{font-family:var(--display);font-size:22px}
 .tcard span{font-size:13px;color:var(--muted)}
 
-.parent{position:fixed;inset:0;background:var(--bg);z-index:30;overflow-y:auto;-webkit-user-select:text;user-select:text}
+.parent{position:fixed;inset:0;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);background:var(--bg);z-index:30;overflow-y:auto;-webkit-user-select:text;user-select:text}
 .parent-in{max-width:780px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px;display:flex;flex-direction:column;gap:16px}
 .parent h2{font-family:var(--display);font-size:26px;margin:0;flex:1}
 .parent h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
@@ -537,18 +537,20 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
       <p class="hint-txt">Имя пишите так, как ребенок называет человека: «мама», «папа», свое имя. «Что делает» — одно слово: «ест», «спит». Для «Кто это?» нужно минимум два разных человека.</p>
       <div class="photos" id="photoList"></div>
       <div class="addph">
-        <label>Фото<input type="file" id="phFile" accept="image/*"></label>
-        <label>Кто это<input type="text" id="phName" placeholder="мама"></label>
-        <label>Что делает<input type="text" id="phAct" placeholder="ест"></label>
+        <label>Фото<input type="file" id="phFile" accept="image/*"></label><img id="phPrev" alt="" hidden style="width:72px;height:72px;object-fit:cover;border-radius:12px;border:2px solid var(--line)">
+        <label>Кто это<input type="text" id="phName" placeholder="например, мама"></label>
+        <label>Что делает<input type="text" id="phAct" placeholder="например, ест"></label>
         <button class="primary" id="phAdd">Добавить фото</button>
       </div>
       <span class="msg" id="phMsg"></span>
-      <div class="row"><label class="ghost" style="cursor:pointer">Загрузить набор фото (файл .json)<input type="file" id="phPack" accept="application/json,.json" hidden></label><span class="hint-txt" id="packMsg"></span></div>
     </details>
     <div class="pbox">
       <h3>Сброс после тестирования</h3>
       <p class="hint-txt">Перед тем как ребенок начнет заниматься, сбросьте то, что набрали взрослые. Фото семьи, распорядок дня и настройки голоса не удаляются.</p>
       <div class="row" id="resetRow"></div>
+      <h3 style="margin-top:14px">Перенос фото семьи</h3>
+      <p class="hint-txt">Если фото уже добавлены на другом устройстве, их можно перенести файлом набора фото (.json).</p>
+      <div class="row"><label class="ghost" style="cursor:pointer">Загрузить файл с фото<input type="file" id="phPack" accept="application/json,.json" hidden></label><span class="hint-txt" id="packMsg"></span></div>
     </div>
     <div class="pbox">
       <h3>Миры для «Куда положить?» и «Где?»</h3>
@@ -561,6 +563,7 @@ body{background:radial-gradient(rgba(255,255,255,.5) 2.2px, transparent 2.8px) 0
       <h3>Анимации и звуки</h3>
       <div class="row"><span class="lbl">Анимации</span><span class="seg" id="animSeg"></span></div>
       <div class="row"><span class="lbl">Звуки</span><span class="seg" id="sfxSeg"></span></div>
+      <div class="row"><span class="lbl">Герой в «Настроении»</span><span class="seg" id="moodHeroSeg"></span></div>
       <div class="row"><span class="lbl">Сюрпризы</span><span class="seg" id="surpSeg"></span></div>
       <div class="row"><span class="lbl">Награды</span><span class="seg" id="rewSeg"></span></div>
       <p class="hint-txt" id="rewHint"></p>
@@ -3298,10 +3301,14 @@ function askTask(){
   };
 }
 /* ================= «Настроение» ================= */
-const MOODS=[{id:"happy",a:"Радостный"},{id:"sad",a:"Грустный"},{id:"angry",a:"Злой"},{id:"scared",a:"Испуганный"},{id:"surprised",a:"Удивленный"},{id:"tired",a:"Уставший"}];
+const MOODS=[{id:"happy",a:"Радостный",f:"Радостная"},{id:"sad",a:"Грустный",f:"Грустная"},{id:"angry",a:"Злой",f:"Злая"},{id:"scared",a:"Испуганный",f:"Испуганная"},{id:"surprised",a:"Удивленный",f:"Удивленная"},{id:"tired",a:"Уставший",f:"Уставшая"}];
+/* герой «Настроения»: мальчик или девочка (настройка «как ребенок / мальчик / девочка / по очереди») */
+function moodHeroGirl(){ const h=S.moodHero||"kid"; return h==="girl" ? true : h==="boy" ? false : h==="alt" ? Math.random()<.5 : kidG()==="f"; }
+const madj=(M,g)=>g?M.f:M.a;
 const MOOD_PIC=new Set(["happy","sad","angry","scared","surprised","tired"]); /* сюда попадут сгенерированные картинки mood_<id>.webp */
-function moodFace(id,x,y,k){ k=k||1;
-  if(MOOD_PIC.has(id)) return `<g transform="translate(${x},${y})">${ipic("mood_"+id,200*k)}</g>`;
+function moodFace(id,x,y,k,g){ k=k||1;
+  if(MOOD_PIC.has(id)) return `<g transform="translate(${x},${y})">${ipic((g?"moodg_":"mood_")+id,200*k)}</g>`;
+  if(id==="calm") return `<g transform="translate(${x},${y})">${ipic(g?"moodg_calm":"mood_calm",200*k)}</g>`;
   const eyes={happy:'<path d="M-38,-10 q12,-14 24,0 M14,-10 q12,-14 24,0" stroke="#3E2723" stroke-width="7" fill="none" stroke-linecap="round"/>',
     sad:'<circle cx="-26" cy="-8" r="8" fill="#3E2723"/><circle cx="26" cy="-8" r="8" fill="#3E2723"/><path d="M-44,-30 l26,-8 M44,-30 l-26,-8" stroke="#3E2723" stroke-width="6" stroke-linecap="round"/>',
     angry:'<circle cx="-26" cy="-4" r="8" fill="#3E2723"/><circle cx="26" cy="-4" r="8" fill="#3E2723"/><path d="M-46,-30 l30,12 M46,-30 l-30,12" stroke="#3E2723" stroke-width="8" stroke-linecap="round"/>',
@@ -3316,48 +3323,49 @@ function moodFace(id,x,y,k){ k=k||1;
     surprised:'<ellipse cx="0" cy="36" rx="14" ry="18" fill="#6D2B2B" stroke="#3E2723" stroke-width="5"/>',
     tired:'<ellipse cx="0" cy="38" rx="12" ry="9" fill="#6D2B2B" stroke="#3E2723" stroke-width="4"/>',
     calm:'<path d="M-20,34 q20,10 40,0" stroke="#3E2723" stroke-width="6" fill="none" stroke-linecap="round"/>'}[id];
-  return `<g transform="translate(${x},${y}) scale(${k})"><circle r="92" fill="#FFCC80" stroke="#8D6E63" stroke-width="5"/><path d="M-90,-20 q-6,-80 90,-74 q96,-6 90,74 q-30,-46 -90,-46 q-60,0 -90,46z" fill="#6D4C41"/>${eyes}${mouth}${id==="tired"?'<text x="62" y="-58" font-family="Rubik,sans-serif" font-weight="800" font-size="34" fill="#5C6BC0">z</text><text x="86" y="-84" font-family="Rubik,sans-serif" font-weight="800" font-size="26" fill="#5C6BC0">z</text>':""}</g>`; }
+  return `<g transform="translate(${x},${y}) scale(${k})">${g?'<ellipse cx="-104" cy="10" rx="26" ry="52" fill="#6D4C41" stroke="#4E342E" stroke-width="4"/><ellipse cx="104" cy="10" rx="26" ry="52" fill="#6D4C41" stroke="#4E342E" stroke-width="4"/><circle cx="-90" cy="-46" r="10" fill="#F06292"/><circle cx="90" cy="-46" r="10" fill="#F06292"/>':""}<circle r="92" fill="#FFCC80" stroke="#8D6E63" stroke-width="5"/><path d="M-90,-20 q-6,-80 90,-74 q96,-6 90,74 q-30,-46 -90,-46 q-60,0 -90,46z" fill="#6D4C41"/>${eyes}${mouth}${id==="tired"?'<text x="62" y="-58" font-family="Rubik,sans-serif" font-weight="800" font-size="34" fill="#5C6BC0">z</text><text x="86" y="-84" font-family="Rubik,sans-serif" font-weight="800" font-size="26" fill="#5C6BC0">z</text>':""}</g>`; }
 const MOOD_SITS=[
-  {m:"sad", t:"У мальчика сломалась машинка.", why:"Потому что сломалась машинка", key:/слома/, pic:"car_red"},
-  {m:"happy", t:"Мальчику подарили мяч.", why:"Потому что ему подарили мяч", key:/подар|мяч/, pic:"ball"},
-  {m:"scared", t:"Рядом громко залаяла собака.", why:"Потому что залаяла собака", key:/собак|лая|лает/, pic:"dog"},
-  {m:"angry", t:"У мальчика забрали мишку.", why:"Потому что забрали мишку", key:/забра|отня/, pic:"toybear"},
-  {m:"surprised", t:"Мальчик открыл коробку, а там котенок!", why:"Потому что в коробке котенок", key:/кот/, pic:"cat"},
-  {m:"tired", t:"Мальчик долго-долго бегал.", why:"Потому что он долго бегал", key:/бега|устал/, pic:"day_walk"},
-  {m:"happy", t:"Мальчику дали конфету.", why:"Потому что ему дали конфету", key:/конфет/, pic:"candy"},
-  {m:"sad", t:"Мальчик уронил яблоко в лужу.", why:"Потому что он уронил яблоко", key:/урон|яблок/, pic:"apple"}];
+  {m:"sad", t:"У мальчика сломалась машинка.", tf:"У девочки сломалась машинка.", why:"Потому что сломалась машинка", key:/слома/, pic:"car_red"},
+  {m:"happy", t:"Мальчику подарили мяч.", tf:"Девочке подарили мяч.", whyf:"Потому что ей подарили мяч", why:"Потому что ему подарили мяч", key:/подар|мяч/, pic:"ball"},
+  {m:"scared", t:"Рядом громко залаяла собака.", tf:"Рядом громко залаяла собака.", why:"Потому что залаяла собака", key:/собак|лая|лает/, pic:"dog"},
+  {m:"angry", t:"У мальчика забрали мишку.", tf:"У девочки забрали мишку.", why:"Потому что забрали мишку", key:/забра|отня/, pic:"toybear"},
+  {m:"surprised", t:"Мальчик открыл коробку, а там котенок!", tf:"Девочка открыла коробку, а там котенок!", why:"Потому что в коробке котенок", key:/кот/, pic:"cat"},
+  {m:"tired", t:"Мальчик долго-долго бегал.", tf:"Девочка долго-долго бегала.", whyf:"Потому что она долго бегала", why:"Потому что он долго бегал", key:/бега|устал/, pic:"day_walk"},
+  {m:"happy", t:"Мальчику дали конфету.", tf:"Девочке дали конфету.", whyf:"Потому что ей дали конфету", why:"Потому что ему дали конфету", key:/конфет/, pic:"candy"},
+  {m:"sad", t:"Мальчик уронил яблоко в лужу.", tf:"Девочка уронила яблоко в лужу.", whyf:"Потому что она уронила яблоко", why:"Потому что он уронил яблоко", key:/урон|яблок/, pic:"apple"}];
 const moodById = id => MOODS.find(x=>x.id===id);
 function moodTask(repeat){
   const L=TRACKS.mood.levels[S.lvl.mood-1], st=S.st.mood, kind=L.kind;
   if(!repeat || !cur || cur.kind!=="mood"){
     if(kind==="sit"||kind==="why"){ const t=freshPick(MOOD_SITS, x=>"ms:"+x.t); cur={kind:"mood", sit:t, m:t.m}; }
     else { const m=freshPick(MOODS, x=>"mo:"+x.id).id; cur={kind:"mood", m}; }
-    cur.others=shuffle(MOODS.filter(x=>x.id!==cur.m).map(x=>x.id)).slice(0, nOpts(st,1,2,3));
+    cur.others=shuffle(MOODS.filter(x=>x.id!==cur.m).map(x=>x.id)).slice(0, nOpts(st,1,2,3)); cur.g=moodHeroGirl();
   } else cur.mistake=true;
-  const M=moodById(cur.m), adj=M.a.toLowerCase(); cur.wkey="mood:"+cur.m;
+  const G=!!cur.g, M=moodById(cur.m), A=madj(M,G), adj=A.toLowerCase(), ON=G?"Она":"Он", on=G?"она":"он", KAK=G?"Какая":"Какой", HERO=G?"девочка":"мальчик"; cur.wkey="mood:"+cur.m;
   clearScene(); room(false);
   if(kind==="name"){
-    $("sBack").innerHTML=moodFace(cur.m,500,300,2);
-    present({ty:"mood", label:`Какое настроение? → ${M.a}`, html:`<span class="chip" style="background:#F4511E">КАКОЙ</span><span>он?</span>`, speech:"Какое у него настроение? Какой он?", right:M.a, cls:"plain", okSay:`Он ${adj}.`, errSay:`Он ${adj}.`, opts:[M.a, ...cur.others.map(id=>moodById(id).a)], hide:false});
+    $("sBack").innerHTML=moodFace(cur.m,500,300,2,G);
+    present({ty:"mood", label:`Какое настроение? → ${A}`, html:`<span class="chip" style="background:#F4511E">${KAK.toUpperCase()}</span><span>${on}?</span>`, speech:`Какое у ${G?"нее":"него"} настроение? ${KAK} ${on}?`, right:A, cls:"plain", okSay:`${ON} ${adj}.`, errSay:`${ON} ${adj}.`, opts:[A, ...cur.others.map(id=>madj(moodById(id),G))], hide:false});
   } else if(kind==="find"){
     $("sBack").innerHTML=`<text x="500" y="320" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="64" fill="#BF360C">Где ${esc(adj)}?</text>`;
-    present({ty:"mood", label:`Найди: ${adj}`, html:`<span class="chip" style="background:#F4511E">НАЙДИ</span><span>${esc(adj)}</span>`, speech:`Где ${adj} мальчик?`, right:cur.m, cls:"wpic", fmt:id=>`<svg viewBox="-110 -110 220 220" aria-label="лицо">${moodFace(id,0,0,1)}</svg>`, okSay:`Да, он ${adj}.`, errSay:`Вот ${adj} мальчик.`, opts:[cur.m, ...cur.others], hide:false, noRead:true});
+    present({ty:"mood", label:`Найди: ${adj}`, html:`<span class="chip" style="background:#F4511E">НАЙДИ</span><span>${esc(adj)}</span>`, speech:`Где ${adj} ${HERO}?`, right:cur.m, cls:"wpic", fmt:id=>`<svg viewBox="-110 -110 220 220" aria-label="лицо">${moodFace(id,0,0,1,G)}</svg>`, okSay:`Да, ${on} ${adj}.`, errSay:`Вот ${adj} ${HERO}.`, opts:[cur.m, ...cur.others], hide:false, noRead:true});
   } else if(kind==="sit"){
-    const t=cur.sit; $("sBack").innerHTML=`<g transform="translate(330,300)">${wpic(t.pic,300)}</g>`+moodFace("calm",720,290,1.3)+`<text x="720" y="170" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="70" fill="#BF360C">?</text>`;
-    present({ty:"mood", label:`${t.t} → ${M.a}`, html:`<span>${esc(t.t)} Какой он?</span>`, speech:`${t.t} Какой он?`, right:M.a, cls:"plain", okSay:`${t.t.replace(/[.!]$/,"")} — он ${adj}.`, errSay:`Он ${adj}.`, opts:[M.a, ...cur.others.map(id=>moodById(id).a)], hide:false});
+    const t=cur.sit; $("sBack").innerHTML=`<g transform="translate(330,300)">${wpic(t.pic,300)}</g>`+moodFace("calm",720,290,1.3,G)+`<text x="720" y="170" text-anchor="middle" font-family="Rubik,sans-serif" font-weight="800" font-size="70" fill="#BF360C">?</text>`;
+    const TT=G&&t.tf?t.tf:t.t; present({ty:"mood", label:`${TT} → ${A}`, html:`<span>${esc(TT)} ${KAK} ${on}?</span>`, speech:`${TT} ${KAK} ${on}?`, right:A, cls:"plain", okSay:`${TT.replace(/[.!]$/,"")} — ${on} ${adj}.`, errSay:`${ON} ${adj}.`, opts:[A, ...cur.others.map(id=>madj(moodById(id),G))], hide:false});
   } else {
-    const t=cur.sit; $("sBack").innerHTML=`<g transform="translate(330,300)">${wpic(t.pic,300)}</g>`+moodFace(t.m,720,300,1.4);
-    moodWhy(t, adj, st);
+    const t=cur.sit; $("sBack").innerHTML=`<g transform="translate(330,300)">${wpic(t.pic,300)}</g>`+moodFace(t.m,720,300,1.4,G);
+    moodWhy(t, adj, st, G);
   }
 }
-function moodWhy(t, adj, st){
-  busy=false; cur.ty="mood"; const q=`Почему мальчик ${adj}?`; cur.speech=q;
+function moodWhy(t, adj, st, G){
+  const TT=G&&t.tf?t.tf:t.t, WHY=G&&t.whyf?t.whyf:t.why;
+  busy=false; cur.ty="mood"; const q=`Почему ${G?"девочка":"мальчик"} ${adj}?`; cur.speech=q;
   cur.render=state=>setCard(`<span class="chip" style="background:#F4511E">ПОЧЕМУ</span><span>${esc(q)}</span>`, state); cur.render(); say(q);
-  const shown = st===1 ? t.why : (st===2 ? "Потому что …" : "");
+  const shown = st===1 ? WHY : (st===2 ? "Потому что …" : "");
   storyJudge(shown?esc(shown):"Ответ скрыт.", !shown, [["jSelf",gx("Сказал сам","Сказала сама"),"self"],["jHelp","С подсказкой","help"],["jNo",gx("Не сказал","Не сказала"),""]]);
-  const done=kind=>{ if(busy) return; busy=true; $("model").textContent=t.why; $("model").classList.remove("empty");
-    const ok=kind==="self"; cur.render(ok?"ok":(kind==="no"?"err":null)); say(`${t.t} Поэтому он ${adj}.`); if(ok) onRightFx($("jMic"));
-    logIt("mood","mood",`${q} → ${t.why}`, cur.voice?`голосом: «${cur.voice}»`:({self:gx("сам","сама"),help:"с подсказкой",no:gx("не сказал","не сказала")})[kind], ok);
+  const done=kind=>{ if(busy) return; busy=true; $("model").textContent=WHY; $("model").classList.remove("empty");
+    const ok=kind==="self"; cur.render(ok?"ok":(kind==="no"?"err":null)); say(`${TT} Поэтому ${G?"она":"он"} ${adj}.`); if(ok) onRightFx($("jMic"));
+    logIt("mood","mood",`${q} → ${WHY}`, cur.voice?`голосом: «${cur.voice}»`:({self:gx("сам","сама"),help:"с подсказкой",no:gx("не сказал","не сказала")})[kind], ok);
     if(ok){ win("mood"); whenQuiet(afterWin,1500); } else { if(kind==="no") lose("mood"); else neutral("mood"); whenQuiet(()=>nextTask(),1500); } };
   holdBtn($("jSelf"),()=>done("self")); holdBtn($("jHelp"),()=>done("help")); holdBtn($("jNo"),()=>done("no"));
   const mic=$("jMic"), heard=$("jHeard");
@@ -3650,7 +3658,7 @@ function wordsTask(repeat){
 /* сначала буквы, с которых начинаются слова из «Читаем словами», потом остальные */
 const LETTER_ORDER = ["М","К","Т","Б","С","З","А","Р","Я","Ч","П","Л","О","У","И","Н","Д","В","Г","Е","Ж","Ф","Х","Ц","Ш","Щ","Э","Ю","Ё","Ы","Й"];
 /* как Вера называет букву: как в логопедии — звуком (мэ, бэ), а не «эм», «бэ» по-школьному */
-const LETTER_SAY = {А:"а",Б:"бэ",В:"вэ",Г:"гэ",Д:"дэ",Е:"е",Ё:"ё",Ж:"жэ",З:"зэ",И:"и",Й:"и краткое",К:"кэ",Л:"лэ",М:"мэ",Н:"нэ",О:"о",П:"пэ",Р:"рэ",С:"сэ",Т:"тэ",У:"у",Ф:"фэ",Х:"хэ",Ц:"цэ",Ч:"чэ",Ш:"шэ",Щ:"щэ",Ы:"ы",Э:"э",Ю:"ю",Я:"я"};
+const LETTER_SAY = {А:"а",Б:"бэ́",В:"вэ́",Г:"гэ́",Д:"дэ́",Е:"е",Ё:"ё",Ж:"жэ́",З:"зэ́",И:"и",Й:"и краткое",К:"кэ́",Л:"лэ́",М:"мэ́",Н:"нэ́",О:"о",П:"пэ́",Р:"рэ́",С:"сэ́",Т:"тэ́",У:"у",Ф:"фэ́",Х:"хэ́",Ц:"цэ́",Ч:"чэ́",Ш:"шэ́",Щ:"щэ́",Ы:"ы",Э:"э",Ю:"ю",Я:"я"};
 const lettersOpen = () => Math.min(LETTER_ORDER.length, 4 + 2*Math.floor((S.lettersOk||0)/10));
 function lettersTask(repeat){
   const L=TRACKS.letters.levels[S.lvl.letters-1], st=S.st.letters, kind=L.kind;
@@ -3845,18 +3853,21 @@ function renderPhotos(){
   $("photoList").innerHTML = PHOTOS.length ? PHOTOS.map((p,i)=>`<div class="ph"><img src="${p.img}" alt="${esc(p.name)}"><div><span><b>${esc(p.name)}</b>${p.act?" · "+esc(p.act):""}</span><button data-del="${i}">Удалить</button></div></div>`).join("") : `<p class="hint-txt">Фото пока нет.</p>`;
   $("photoList").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ PHOTOS.splice(+b.dataset.del,1); savePhotos(); renderPhotos(); });
 }
-$("phAdd").onclick=()=>{
-  const f=$("phFile").files[0], name=$("phName").value.trim(), act=$("phAct").value.trim(); $("phMsg").textContent="";
-  if(!f){ $("phMsg").textContent="Выберите фото."; return; }
-  if(!name){ $("phMsg").textContent="Напишите, кто на фото."; return; }
+/* фото читаем сразу при выборе: на Android файл может стать недоступен, пока выбор фото в галерее уводит приложение в фон */
+let PH_PENDING=null;
+$("phFile").onchange=()=>{ const f=$("phFile").files[0]; PH_PENDING=null; $("phMsg").textContent=""; $("phPrev").hidden=true; if(!f) return;
   const img=new Image(), url=URL.createObjectURL(f);
   img.onload=()=>{ const m=480, k=Math.min(1, m/Math.max(img.width,img.height)); const c=document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
-    c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
-    PHOTOS.push({name, act, img:c.toDataURL("image/jpeg",0.8)});
-    if(!savePhotos()){ PHOTOS.pop(); $("phMsg").textContent="Не хватает места на устройстве. Удалите одно из старых фото."; return; }
-    $("phFile").value=""; $("phName").value=""; $("phAct").value=""; renderPhotos(); };
-  img.onerror=()=>{ URL.revokeObjectURL(url); $("phMsg").textContent="Не получилось открыть этот файл. Попробуйте другое фото."; };
-  img.src=url;
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url); PH_PENDING=c.toDataURL("image/jpeg",0.8); $("phPrev").src=PH_PENDING; $("phPrev").hidden=false; };
+  img.onerror=()=>{ URL.revokeObjectURL(url); $("phMsg").textContent="Не получилось открыть это фото. Выберите его еще раз или другое."; };
+  img.src=url; };
+$("phAdd").onclick=()=>{
+  const name=$("phName").value.trim(), act=$("phAct").value.trim(); $("phMsg").textContent="";
+  if(!PH_PENDING){ $("phMsg").textContent = $("phFile").value ? "Фото еще загружается или не открылось. Выберите его еще раз." : "Сначала выберите фото."; return; }
+  if(!name){ $("phMsg").textContent="Напишите, кто на фото."; return; }
+  PHOTOS.push({name, act, img:PH_PENDING});
+  if(!savePhotos()){ PHOTOS.pop(); $("phMsg").textContent="Не хватает места на устройстве. Удалите одно из старых фото."; return; }
+  PH_PENDING=null; $("phPrev").hidden=true; $("phFile").value=""; $("phName").value=""; $("phAct").value=""; renderPhotos();
 };
 $("phPack").onchange=()=>{
   const f=$("phPack").files[0]; const m=$("packMsg"); m.textContent=""; if(!f) return;
@@ -3910,6 +3921,7 @@ function renderParent(){ renderPTabs(); renderBuy(); renderResetRow(); renderKid
   renderDayEd(); renderPhotos();
   if(!S.worlds) S.worlds={room:true,pirates:true,space:true,army:true,princess:false};
   seg($("worldSeg"), Object.keys(WORLDS).map(w=>({label:WORLDS[w].name, v:w})), v=>worldOn(v), v=>{ S.worlds[v]=!worldOn(v); if(!Object.keys(WORLDS).some(worldOn)) S.worlds[v]=true; });
+  seg($("moodHeroSeg"), [{label:"Как ребенок",v:"kid"},{label:"Мальчик",v:"boy"},{label:"Девочка",v:"girl"},{label:"По очереди",v:"alt"}], v=>(S.moodHero||"kid")===v, v=>{ S.moodHero=v; });
   seg($("mascotSeg"), [{label:"Авто",v:"auto"},{label:"Чип",v:"robot"},{label:"Танчик",v:"tank"},{label:"Единорожка",v:"uni"}], v=>(S.mascotSel||"auto")===v, v=>{ S.mascotSel=v; refreshMascot(); });
   seg($("animSeg"), [{label:"Много",v:"many"},{label:"Мало",v:"few"}], v=>S.anim===v, v=>{ S.anim=v; applyCalm(); });
   seg($("surpSeg"), [{label:"Выкл",v:"off"},{label:"Редко",v:"rare"},{label:"Иногда",v:"some"},{label:"Часто",v:"often"}], v=>(S.surprise||"some")===v, v=>{ S.surprise=v; });
