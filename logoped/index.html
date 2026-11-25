@@ -6931,7 +6931,11 @@ renderStars(); renderHome(); if(!S.kid || !S.kid.name) openKidSetup();
 window.__alan = {dlgPhrases, passData, renderPassBox, MYP:()=>MY, myPut, myCards, pracPhrases, prizePhrases, planPhrases, PLAN_LIB, PRIZES, renderStars, getVlog:()=>VLOG, getS:()=>S, enAllPhrases, EN_TRACKS, applyLang, openKidSetup, goHome, launch, showUpsell:()=>showUpsell(), setMode:m=>{mode=m;}, showLevelUp, levelUpDue, readiness, mainType, lessonPhrases, lessonNext, lessonBuild, lessonCur, lessonGo, lessonCount, TRACE_SHAPES,  LETTER_STROKES, LETTER_SAY, letterWord, DOT_SHAPES, RU_ABC, PCOL, COLOR_PICS, FIX_PICS, FIX_MISS, kkAllPhrases, KK_DNG, KK_SEQ, KK_NAME, KK_NEEDQ, KK_PROD, KK_DEPTS, KK_PLACE, KK_WHO, KK_LIFE, KK_TRACKS, openParent, reportData, makeReportPdf, DNG, LS_PL, LS_SEQ, LS_NEED, LS_NAME, LS_PROD, LS_DEPTS, LS_PLACE, LS_WHO, LS_LIFE, v4Match, PLACES, OBJ, CITEMS, COLORS, ODD_PICS, DAY_ITEMS, realTank, emo, getCur:()=>cur, say:t=>say(t), sayParts:t=>splitSay(t).parts.map(voiceText), kidName:()=>kidName(), openParent:()=>openParent(), rewardEvery:()=>rewardEvery(), afterWin:()=>afterWin(), run, STORY3, showSurprise:(n)=>showSurprise(n||(()=>{})), openFinds, FINDS, showReward:()=>showReward(), TRACKS, S, makeActScene, STORIES, FRAMES, OBJS, DAY_ITEMS, start, nextTask};
 /* ===== Web version for speech therapists: access by code (hashes in web-codes.txt; remove a line to revoke) ===== */
 const APPSTORE_URL="https://apps.apple.com/app/id6832155048";
-if(!IS_NATIVE){
+/* WEB_OPEN=true — веб-версия открыта всем (пока Android нет в Google Play). Когда ALAN выйдет в Google Play — поставить false, и снова будет вход только по коду. */
+const WEB_OPEN=true;
+if(!IS_NATIVE && WEB_OPEN){ S.full=true; S.need=0; save(); S.webOpen=true; }
+if(!IS_NATIVE && !WEB_OPEN){
+  if(S.webOpen){ S.webOpen=false; S.full=false; save(); }
   const KEY="alan-web-code";
   const sha=t=>crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)).then(b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""));
   const norm=t=>String(t||"").trim().toUpperCase().replace(/\s+/g,"");
